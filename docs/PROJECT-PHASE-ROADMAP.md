@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 9 — LangGraph Workflow (implemented; 25 focused tests passed; awaiting review)
+**Current Phase:** ✅ Phase 10 — Human-in-the-Loop Agent Workflow (complete following user-reported independent verification)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 10 — Human-in-the-Loop Agent Workflow, pending explicit approval; NOT started. Bedrock remains deferred.
+**Next:** Phase 11 — Knowledge Base & RAG, pending explicit approval; NOT started. Bedrock remains deferred.
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -103,9 +103,9 @@ Interview Mastery
 | 7 | Amazon Bedrock Integration | ⏳ |
 | **7A** | **Gemini LLM Integration** | **🔄 Implemented; final local verification passed** |
 | 8 | Customer Resolution Agent | ✅ Complete; final verification passed |
-| 9 | LangGraph Workflow | 🔄 Implemented; 25 focused tests passed; awaiting review |
-| 10 | Human-in-the-Loop Agent Workflow | ⏳ |
-| 11 | Knowledge Base & RAG | ⏳ |
+| 9 | LangGraph Workflow | Verified baseline per user; retained unchanged |
+| 10 | Human-in-the-Loop Agent Workflow | ✅ Complete; independent verification passed |
+| 11 | Knowledge Base & RAG | ⏳ Next; not started |
 | 12 | Conversation Memory & Persistence | ⏳ |
 | 13 | Authentication & Authorization | ⏳ |
 | 14 | Guardrails & AI Safety Controls | ⏳ |
@@ -520,7 +520,7 @@ The agent must not independently authorize sensitive business actions.
 
 ## Phase 9 — LangGraph Workflow 🔄
 
-**Status:** Implemented; **25/25 focused fake-provider tests passed**. Review and broader verification are pending; commit/push completion is not claimed.
+**Status:** Verified baseline per the user's Phase 10 instruction; **25/25 focused fake-provider tests** remain the recorded implementation-time evidence. Retained unchanged in Phase 10; no additional regression counts are inferred.
 
 Six explicit nodes handle case loading, reasoning, validated tool execution, audit recording, finalization, and safe failure. State is Pydantic-validated. Existing tools, providers, business rules, and the Phase 8 baseline remain unchanged. LangGraph **1.2.12** is the only new direct dependency. No checkpointing, persistence, or HITL pause/resume was added. See [Phase 9 contracts and verification](phase-9-langgraph.md). The target workflow below is planning context; human review integration is deferred to Phase 10.
 
@@ -561,7 +561,13 @@ END
 
 ---
 
-## Phase 10 — Human-in-the-Loop Agent Workflow ⏳
+## Phase 10 — Human-in-the-Loop Agent Workflow ✅ Complete
+
+**Status:** Complete following user-reported independent verification: focused HITL tests **20/20 passed**, full backend regression **129/129 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. No new commit/push completion is claimed.
+
+Limitations remain: reviewer identity is not authenticated; checkpoints are in-memory and lost on restart; no durable recovery or frontend HITL UI exists; approval/rejection does not execute business actions.
+
+The local LangGraph workflow now interrupts after pending proposal creation, stores JSON-compatible state in `InMemorySaver`, and resumes with a validated workflow/case/proposal/review-bound human decision. It calls the existing Phase 4 review service directly, records audit history, and ends without another LLM call or business action. No new packages, durable storage, authentication, or frontend UI. See [Phase 10 contracts and limitations](phase-10-hitl.md). Phase 11 has not started.
 
 **Goal:** Integrate human review directly into the agentic workflow.
 
@@ -599,6 +605,8 @@ Controlled Continuation
 # 📚 KNOWLEDGE & RAG
 
 ## Phase 11 — Knowledge Base & RAG ⏳
+
+**Status:** Next phase; awaiting explicit approval. NOT started.
 
 **Goal:** Ground AI responses in trusted customer-support knowledge.
 
@@ -1317,12 +1325,12 @@ Phase 6   Implemented; focused tests passed; committed
 Phase 7   ⏳ Bedrock deferred
 Phase 7A  Gemini adapter; final local verification passed
 Phase 8   ✅ Complete; final verification passed
-Phase 9   🔄 Implemented; 25 focused tests passed; awaiting review
-Phase 10  ⏳ NEXT — awaiting approval; NOT started
+Phase 9   Verified baseline; retained unchanged
+Phase 10  ✅ Complete; independent verification passed
 
 KNOWLEDGE & STATE
 ────────────────────────────────
-Phase 11  ⏳
+Phase 11  ⏳ NEXT — awaiting approval; NOT started
 Phase 12  ⏳
 
 SECURITY & AI QUALITY

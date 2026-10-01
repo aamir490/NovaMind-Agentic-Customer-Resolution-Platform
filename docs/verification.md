@@ -1,5 +1,22 @@
 # Local verification evidence
 
+## Phase 10 — Complete; independent verification reported by the user
+
+- Phase 10 focused HITL tests: **20/20 passed**.
+- Full backend regression: **129/129 passed**.
+- Frontend API tests: **6/6 passed**.
+- Frontend production build: **passed**.
+- `git diff --check`: **passed with CRLF/LF normalization warnings only**.
+
+These user-supplied results were not rerun during this documentation-only update. Phase 10 is complete; Phase 11 is next but has not started. Reviewer identity remains unauthenticated, checkpoints are in-memory and lost on restart, and there is no durable recovery or frontend HITL UI. Approval/rejection does not execute business actions. Live Gemini and browser verification are not established by these results.
+
+### Implementation-time focused interrupt/resume verification
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_hitl.py -v`: **20/20 passed**, using fake providers and local in-memory checkpoints.
+- Covers interrupt/approve/reject, minimal review payload, optional note, malformed/tampered resumes, all ID bindings, replay/concurrent review, external review conflicts, ordered audit, LLM exclusion, unchanged business records, step/failure boundaries, isolated instances, uncertain-write failure, and strict checkpoint serialization.
+- Initial checkpoint type warnings were resolved by JSON-compatible state updates; the final focused run passed without those warnings.
+- During implementation, no packages, live Gemini calls, full regression, frontend build, or browser verification. Subsequent independent results are recorded above. Phases 8 and 9 remain unchanged. See [Phase 10 limits](phase-10-hitl.md). Phase 11 has not started.
+
 ## Phase 9 — Focused graph verification only
 
 - `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_graph_agent.py -v`: **25/25 passed** with fake providers.

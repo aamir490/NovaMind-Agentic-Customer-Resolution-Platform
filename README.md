@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 9 — LangGraph workflow
+## Current stage: V2 Phase 10 complete — Human-in-the-loop agent workflow
 
-Phase 9 is implemented with focused verification; review and broader verification remain pending. Phase 10 has not started.
+Phase 10 is complete following user-reported independent verification. Phase 11 is next, pending approval; it has not started.
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -50,6 +50,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- A local checkpointed HITL workflow pauses after pending proposal creation and resumes only through an explicit validated human decision. It reuses Phase 4 review, ends without another LLM call or action execution, and leaves Phases 8/9 available unchanged. See [Phase 10 contracts and limits](docs/phase-10-hitl.md).
 - A separate LangGraph workflow with six explicit nodes, validated state, conditional routing, bounded steps, and ordered audit results. The Phase 8 loop remains available unchanged. See [Phase 9 implementation and limits](docs/phase-9-langgraph.md).
 - A bounded in-process resolution agent composes the Phase 6 LLM interface with the Phase 5 tools, retaining structured audit history and rendering explicit informational/pending-review outcomes. Gemini can be injected through the existing adapter; no live agent run or HTTP/UI wiring was added. See [Phase 8 contracts and limits](docs/phase-8-agent.md).
 - An isolated Gemini adapter using the official Google GenAI SDK, environment credentials, configurable model (default `gemini-3.8-flash`), and the Phase 6 structured-output boundary. Verified with mocked clients only; no live Gemini call or application wiring. See [Phase 7A setup and limits](docs/phase-7a-gemini.md).
@@ -78,6 +79,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 10 independent verification reported by the user: **20/20 focused HITL tests passed**, **129/129 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini and browser verification are not established by these results.
 - Phase 9: **25/25 focused graph tests passed** using fake providers; dependency health passed. No live Gemini, full regression, frontend build, or browser checks ran for this phase. Earlier-phase results below remain historical evidence.
 - Phase 8 final verification reported by the user: **15/15 focused agent tests passed**, **84/84 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini and browser verification remain unverified. Results below are historical evidence.
 - Phase 7A: eleven focused mocked-provider tests passed. Final verification reported by the user: full backend regression **69/69 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini behavior remains unverified; no browser verification was reported.
