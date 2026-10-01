@@ -1,5 +1,14 @@
 # Local verification evidence
 
+## Phase 5 — Focused local tool verification only
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_tools.py -v`: **12 tests passed**.
+- Verified the exact allowlist, schema descriptions, input validation before service calls, delegated lookups/eligibility/proposal creation, structured expected errors, pending-only creation, exclusion of review/execution, status after separate human review, unchanged case/order/inventory records, and application isolation.
+- Unexpected service failures propagate rather than becoming fabricated business results.
+- Tests used in-process services only. No full regression, frontend build, browser verification, package installation, or external service/AWS call was performed. Earlier checks below remain historical evidence.
+
+See [Phase 5 contracts and limitations](phase-5-tools.md). Phase 6 has not started.
+
 ## Phase 4 — Focused proposal/review verification only
 
 - `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_proposals.py -v`: **11 tests passed** (7 service tests, 4 HTTP tests).
@@ -7,7 +16,7 @@
 - Only the new proposal tests ran. The HTTP harness used a temporary loopback port and shut down after completion. No frontend builds, browser verification, or full regression were run, per scope.
 - No new packages, agents, external services, authentication, persistence, execution, or infrastructure were introduced. Previous results below remain historical evidence, not a claim of a Phase 4 full regression.
 
-See [Phase 4 limitations](phase-4-proposals.md), particularly the distinction between a caller-labelled human review and authenticated authorization. Phase 5 has not started.
+See [Phase 4 limitations](phase-4-proposals.md), particularly the distinction between a caller-labelled human review and authenticated authorization.
 
 ## Phase 3 — Local case review UI
 

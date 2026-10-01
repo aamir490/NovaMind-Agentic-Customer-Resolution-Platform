@@ -1,6 +1,8 @@
 # Current local baseline
 
-Status: Phase 4 local proposal/review APIs with the unchanged Phase 3 case-review UI, extending Phase 2 operations, the Phase 1 domain, and the accepted Phase 0B scaffold. This document describes only current behavior.
+Status: Phase 5 local tool layer over Phase 4 proposal/review services, with the unchanged Phase 3 case-review UI, extending Phase 2 operations, the Phase 1 domain, and the accepted Phase 0B scaffold. This document describes only current behavior.
+
+Phase 5 exposes `app.state.local_tools` for in-process Python calls. An explicit eight-tool allowlist validates inputs and delegates to the same case, business-operation, and proposal services used by the APIs. Proposal creation is the only write tool; human review and execution are excluded. There is no agent, SDK adapter, or new HTTP route. See [tool contracts and limits](../phase-5-tools.md).
 
 Phase 4 adds an independent in-memory proposal service wired to the existing case store. It records proposed actions and allows one explicit approve/reject transition under a process-local lock. Reviewer labels are unverified; no authenticated authorization or financial execution exists. See [proposal contracts and limitations](../phase-4-proposals.md).
 
@@ -36,7 +38,7 @@ The frontend uses native fetch and React state; no router or separate state/API 
 - No database.
 - No AWS deployment.
 
-The frontend now includes case/item selection and a read-only assessment-input form. It uses existing GET endpoints and renders backend results without eligibility-rule duplication. There are no record-editing controls, agent-callable business tools, refund/replacement execution, authentication, or authorization workflow. Customer/order consistency checks do not authenticate the caller. The action lifecycle displayed on the page is explanatory text, not enforcement.
+The frontend includes case/item selection and a read-only assessment-input form. It uses existing GET endpoints and renders backend results without eligibility-rule duplication. There are no record-editing or proposal-review controls in the UI. Human review remains an explicit backend API operation. No refund/replacement execution or authentication exists. Customer/order consistency checks do not authenticate the caller. The action lifecycle displayed on the page is explanatory text, not enforcement.
 
 Phase 2 adds inventory and policy GET endpoints plus an order eligibility GET endpoint. The read-only service reuses customer/order records, reads immutable fixtures, and calls a pure rule evaluator. It performs no state mutation or external I/O. See [Phase 2 assumptions and contracts](../phase-2-business-operations.md).
 

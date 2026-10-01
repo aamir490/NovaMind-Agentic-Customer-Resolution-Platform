@@ -12,6 +12,7 @@ from .operations import BusinessOperations
 from .proposal_routes import router as proposal_router
 from .proposals import ProposalService
 from .service import CaseService, ConflictError, NotFoundError
+from .tools import LocalTools
 
 
 class HealthResponse(BaseModel):
@@ -33,6 +34,9 @@ def create_app() -> FastAPI:
     app.state.case_service = CaseService()
     app.state.business_operations = BusinessOperations(app.state.case_service)
     app.state.proposal_service = ProposalService(app.state.case_service)
+    app.state.local_tools = LocalTools(
+        app.state.case_service, app.state.business_operations, app.state.proposal_service,
+    )
     app.add_api_route("/api/health", health, response_model=HealthResponse, tags=["health"])
     app.include_router(router)
     app.include_router(operation_router)
