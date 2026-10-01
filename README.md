@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 8 complete — Controlled customer resolution agent
+## Current stage: V2 Phase 9 — LangGraph workflow
 
-Phase 9 is next, pending approval; it has not started.
+Phase 9 is implemented with focused verification; review and broader verification remain pending. Phase 10 has not started.
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -50,6 +50,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- A separate LangGraph workflow with six explicit nodes, validated state, conditional routing, bounded steps, and ordered audit results. The Phase 8 loop remains available unchanged. See [Phase 9 implementation and limits](docs/phase-9-langgraph.md).
 - A bounded in-process resolution agent composes the Phase 6 LLM interface with the Phase 5 tools, retaining structured audit history and rendering explicit informational/pending-review outcomes. Gemini can be injected through the existing adapter; no live agent run or HTTP/UI wiring was added. See [Phase 8 contracts and limits](docs/phase-8-agent.md).
 - An isolated Gemini adapter using the official Google GenAI SDK, environment credentials, configurable model (default `gemini-3.8-flash`), and the Phase 6 structured-output boundary. Verified with mocked clients only; no live Gemini call or application wiring. See [Phase 7A setup and limits](docs/phase-7a-gemini.md).
 - A standalone provider-neutral LLM interface with validated structured output and a deterministic fake for tests only. It is not connected to APIs, tools, or business operations. See [Phase 6 contracts and limitations](docs/phase-6-llm.md).
@@ -62,7 +63,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 - Local proposal creation and explicit, one-time approve/reject APIs. Server-managed IDs/status/timestamps; no action execution or verified reviewer identity. See [Phase 4 contracts and limits](docs/phase-4-proposals.md). The frontend remains the Phase 3 read-only UI.
 - Eight typed local tools delegate lookups, eligibility assessment, pending proposal creation, and proposal status to existing services. Review and execution are excluded. See [Phase 5 tool contracts](docs/phase-5-tools.md). No agent or new HTTP endpoint is added.
 
-Use Python 3.12 and Node.js 24. Phase 8 reuses the existing dependencies. No Bedrock integration, persistent database, authentication, or AWS deployment exists.
+Use Python 3.12 and Node.js 24. Phase 9 adds LangGraph; existing package versions remain pinned. No Bedrock integration, persistent database, authentication, or AWS deployment exists.
 
 ## PLANNED
 
@@ -77,6 +78,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 9: **25/25 focused graph tests passed** using fake providers; dependency health passed. No live Gemini, full regression, frontend build, or browser checks ran for this phase. Earlier-phase results below remain historical evidence.
 - Phase 8 final verification reported by the user: **15/15 focused agent tests passed**, **84/84 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini and browser verification remain unverified. Results below are historical evidence.
 - Phase 7A: eleven focused mocked-provider tests passed. Final verification reported by the user: full backend regression **69/69 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini behavior remains unverified; no browser verification was reported.
 - Phase 6: ten focused LLM-contract tests passed. No full regression, frontend build, or browser verification ran. Results below are earlier-phase evidence.

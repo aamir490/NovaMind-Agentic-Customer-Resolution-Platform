@@ -1,4 +1,4 @@
-Current status: **Phase 8 complete**, following user-reported final verification: focused agent tests **15/15 passed**, full backend regression **84/84 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini remains unverified. Phase 9 is **next, pending approval; NOT started**. Bedrock remains deferred. No new commit/push status is claimed by this documentation update.
+Current status: **Phase 9 implemented**, with **25/25 focused fake-provider graph tests passed**; review and broader verification are pending. Phase 8 remains complete and unchanged as the baseline. Live Gemini remains unverified. Phase 10 is **next, pending approval; NOT started**. Bedrock remains deferred. No commit/push completion is claimed for Phase 9.
 
 | Phase | Name | Main Goal |
 |---|---|---|
@@ -14,7 +14,7 @@ Current status: **Phase 8 complete**, following user-reported final verification
 | **7** | Amazon Bedrock Integration | Connect the application to AWS Bedrock models |
 | **7A** | Gemini LLM Integration | Isolated provider adapter over Phase 6; final local verification passed; see [details](phase-7a-gemini.md) |
 | **8** | First Customer-Resolution Agent — COMPLETE | Final verification passed; see [details](phase-8-agent.md) |
-| **9** | LangGraph Workflow — NEXT, NOT STARTED | Explicit stateful agent workflow and routing; awaiting approval |
+| **9** | LangGraph Workflow — IMPLEMENTED, AWAITING REVIEW | Six nodes, conditional routing, bounded steps; [25 focused tests passed](phase-9-langgraph.md) |
 | **10** | Human-in-the-Loop Agent Workflow | Agent proposal → human approval/rejection |
 | **11** | Knowledge Base & RAG | Ground responses using support/policy knowledge |
 | **12** | Conversation Memory & Persistence | Durable cases, conversations and workflow state |

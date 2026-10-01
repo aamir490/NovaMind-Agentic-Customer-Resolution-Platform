@@ -1,5 +1,11 @@
 # Local verification evidence
 
+## Phase 9 — Focused graph verification only
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_graph_agent.py -v`: **25/25 passed** with fake providers.
+- Includes 15 baseline behavioral scenarios run against the graph and 10 graph-specific routing, parity, state-validation, limit, failure-recovery, staged-write, and tracing tests.
+- Dependency health: `pip check` passed. No full regression, frontend build, browser verification, or live Gemini calls ran. Phase 8 remains unchanged; Phase 10 has not started. See [Phase 9 details](phase-9-langgraph.md).
+
 ## Phase 8 — Complete; final verification reported by the user
 
 - Phase 8 focused agent tests: **15/15 passed**.
