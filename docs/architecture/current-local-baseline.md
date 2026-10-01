@@ -1,6 +1,8 @@
 # Current local baseline
 
-Status: Phase 3 local case review UI, extending Phase 2 operations, the Phase 1 domain, and the accepted Phase 0B scaffold. This document describes only current behavior.
+Status: Phase 4 local proposal/review APIs with the unchanged Phase 3 case-review UI, extending Phase 2 operations, the Phase 1 domain, and the accepted Phase 0B scaffold. This document describes only current behavior.
+
+Phase 4 adds an independent in-memory proposal service wired to the existing case store. It records proposed actions and allows one explicit approve/reject transition under a process-local lock. Reviewer labels are unverified; no authenticated authorization or financial execution exists. See [proposal contracts and limitations](../phase-4-proposals.md).
 
 ```text
 Browser

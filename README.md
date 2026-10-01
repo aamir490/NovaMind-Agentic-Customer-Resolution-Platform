@@ -2,7 +2,7 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 3 — Local case review UI
+## Current stage: V2 Phase 4 — Resolution proposal and human review boundary
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -54,6 +54,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 - In-memory customer, order, and support-case records, validated API models, and limited case-status transitions. See the [Phase 1 API walkthrough](docs/phase-1-domain.md).
 - Read-only local inventory/policy lookups and conditional return/refund eligibility checks with explicit denial reasons. See [Phase 2 operations and assumptions](docs/phase-2-business-operations.md).
 - A read-only case-review UI showing customer/order context, inventory, policy, assessment inputs, and backend eligibility/denial results. See [the Phase 3 walkthrough](docs/phase-3-case-review.md).
+- Local proposal creation and explicit, one-time approve/reject APIs. Server-managed IDs/status/timestamps; no action execution or verified reviewer identity. See [Phase 4 contracts and limits](docs/phase-4-proposals.md). The frontend remains the Phase 3 read-only UI.
 
 Use Python 3.12 and Node.js 24. Phase 1 reuses the existing dependencies. No agent, Bedrock integration, persistent database, authentication, or AWS deployment exists.
 
@@ -70,6 +71,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 4: eleven focused proposal-service/HTTP tests passed. Full regression, frontend builds, and browser checks were deliberately not rerun for this phase; the following results are prior-phase evidence.
 - Twenty-five focused domain/business-rule and real HTTP tests.
 - Six frontend API tests and a manual local browser case-review walkthrough.
 - Local frontend build.

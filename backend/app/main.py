@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from .routes import router
 from .operation_routes import router as operation_router
 from .operations import BusinessOperations
+from .proposal_routes import router as proposal_router
+from .proposals import ProposalService
 from .service import CaseService, ConflictError, NotFoundError
 
 
@@ -25,14 +27,16 @@ def health() -> HealthResponse:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="NovaMind API",
-        description="Phase 2 local deterministic business operations. No authentication or AWS integration.",
-        version="0.2.0",
+        description="Phase 4 local proposals and human review records. No authentication or action execution.",
+        version="0.4.0",
     )
     app.state.case_service = CaseService()
     app.state.business_operations = BusinessOperations(app.state.case_service)
+    app.state.proposal_service = ProposalService(app.state.case_service)
     app.add_api_route("/api/health", health, response_model=HealthResponse, tags=["health"])
     app.include_router(router)
     app.include_router(operation_router)
+    app.include_router(proposal_router)
 
     @app.exception_handler(NotFoundError)
     async def not_found(request: Request, error: NotFoundError) -> JSONResponse:

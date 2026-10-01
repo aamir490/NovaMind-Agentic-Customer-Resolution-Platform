@@ -1,5 +1,14 @@
 # Local verification evidence
 
+## Phase 4 — Focused proposal/review verification only
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_proposals.py -v`: **11 tests passed** (7 service tests, 4 HTTP tests).
+- Verified pending creation, existing-case linkage, retrieval/filtering, immutable proposed content, server-managed fields, both explicit decisions, terminal/repeated-transition rejection, concurrent reviews with exactly one winner, missing records, invalid inputs, application isolation, and unchanged case/order/inventory records after approval.
+- Only the new proposal tests ran. The HTTP harness used a temporary loopback port and shut down after completion. No frontend builds, browser verification, or full regression were run, per scope.
+- No new packages, agents, external services, authentication, persistence, execution, or infrastructure were introduced. Previous results below remain historical evidence, not a claim of a Phase 4 full regression.
+
+See [Phase 4 limitations](phase-4-proposals.md), particularly the distinction between a caller-labelled human review and authenticated authorization. Phase 5 has not started.
+
 ## Phase 3 — Local case review UI
 
 - `node --test tests/frontend-api.test.mjs`: **6 frontend API tests passed** using the built-in Node test runner.
