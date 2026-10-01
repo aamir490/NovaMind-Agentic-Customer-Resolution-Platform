@@ -2,7 +2,7 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 5 — Agent-ready local tool layer
+## Current stage: V2 Phase 6 — Local LLM foundation
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -48,6 +48,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- A standalone provider-neutral LLM interface with validated structured output and a deterministic fake for tests only. It is not connected to APIs, tools, or business operations. See [Phase 6 contracts and limitations](docs/phase-6-llm.md).
 - A React/Vite welcome page with a local API check and an unavailable-API message.
 - A FastAPI `GET /api/health` endpoint returning process health.
 - A Vite development proxy connecting the page to FastAPI.
@@ -72,6 +73,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 6: ten focused LLM-contract tests passed. No full regression, frontend build, or browser verification ran. Results below are earlier-phase evidence.
 - Phase 5: twelve focused tool tests passed. No full regression, frontend build, or browser verification was run; results below are historical evidence.
 - Phase 4: eleven focused proposal-service/HTTP tests passed. Full regression, frontend builds, and browser checks were deliberately not rerun for this phase; the following results are prior-phase evidence.
 - Twenty-five focused domain/business-rule and real HTTP tests.
