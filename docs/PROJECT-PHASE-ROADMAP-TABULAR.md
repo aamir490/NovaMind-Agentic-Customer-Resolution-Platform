@@ -1,3 +1,5 @@
+Current status: Phase 7A is implemented with 11 mocked tests passing. The user reported final verification: full backend regression **69/69 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live-provider verification remains unverified. Phase 5 is approved/committed/pushed; Phase 6 is implemented and committed. Bedrock remains deferred. Phase 8 has NOT started.
+
 | Phase | Name | Main Goal |
 |---|---|---|
 | **0A** | Project Planning & Scope | Define problem, boundaries and target architecture |
@@ -10,6 +12,7 @@
 | **5** | Agent-Ready Tool Layer | Safe structured tools over deterministic services |
 | **6** | LLM Foundation | Introduce the model layer with structured outputs |
 | **7** | Amazon Bedrock Integration | Connect the application to AWS Bedrock models |
+| **7A** | Gemini LLM Integration | Isolated provider adapter over Phase 6; final local verification passed; see [details](phase-7a-gemini.md) |
 | **8** | First Customer-Resolution Agent | Agent reasons about cases and selects allowed tools |
 | **9** | LangGraph Workflow | Explicit stateful agent workflow and routing |
 | **10** | Human-in-the-Loop Agent Workflow | Agent proposal → human approval/rejection |

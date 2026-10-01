@@ -8,9 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 5 — Agent-Ready Tool Layer  
-**Completed:** ✅ Phase 0A through Phase 4  
-**Next:** ⏳ Phase 6 — LLM Foundation
+**Current Phase:** 🔄 Phase 7A — Gemini LLM Integration (implemented; final local verification reported complete by the user)
+
+**Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
+
+**Next:** Await explicit approval. Phase 8 is not started; Bedrock remains deferred.
 
 ### Status Legend
 
@@ -94,9 +96,10 @@ Interview Mastery
 | 2 | Deterministic Business Operations | ✅ |
 | 3 | Local Case Review UI | ✅ |
 | 4 | Resolution Proposal & Human Approval Boundary | ✅ |
-| **5** | **Agent-Ready Tool Layer** | **🔄** |
-| 6 | LLM Foundation | ⏳ |
+| 5 | Agent-Ready Tool Layer | ✅ |
+| 6 | LLM Foundation | Implemented; focused tests passed; committed |
 | 7 | Amazon Bedrock Integration | ⏳ |
+| **7A** | **Gemini LLM Integration** | **🔄 Implemented; final local verification passed** |
 | 8 | Customer Resolution Agent | ⏳ |
 | 9 | LangGraph Workflow | ⏳ |
 | 10 | Human-in-the-Loop Agent Workflow | ⏳ |
@@ -344,13 +347,13 @@ Phase 4 was committed and pushed to GitHub.
 
 # 🧰 AGENT FOUNDATION
 
-## Phase 5 — Agent-Ready Tool Layer 🔄
+## Phase 5 — Agent-Ready Tool Layer ✅
 
-**Status:** CURRENT PHASE
+**Status:** Approved, verified, committed, and pushed.
 
 **Goal:** Create a controlled application capability layer that future AI agents can safely use.
 
-### Planned Tools
+### Implemented Tools
 
 - Customer lookup
 - Order lookup
@@ -409,7 +412,9 @@ Business Data
 
 # 🧠 LLM FOUNDATION
 
-## Phase 6 — LLM Foundation ⏳
+## Phase 6 — LLM Foundation — implemented
+
+The provider-neutral interface, validated JSON responses, explicit failures, and fake provider are implemented and committed. Ten focused tests passed. The original planning list below is historical; Phase 6 does not implement transport timeouts or a real provider. See [Phase 6 contracts](phase-6-llm.md).
 
 **Goal:** Introduce a clean LLM abstraction without creating an unrestricted AI agent.
 
@@ -438,6 +443,8 @@ Model Provider
 
 ## Phase 7 — Amazon Bedrock Integration ⏳
 
+Deferred: no Bedrock work is authorized by Phase 7A.
+
 **Goal:** Connect the LLM layer to Amazon Bedrock.
 
 ### Planned Work
@@ -462,6 +469,12 @@ Amazon Bedrock
 ```
 
 Application business logic should not become tightly coupled to a single model.
+
+---
+
+## Phase 7A — Gemini LLM Integration 🔄
+
+The isolated Google GenAI adapter implements the Phase 6 interface with environment credentials, configurable model, JSON schema output, HTTP timeout, and explicit failure mapping. Eleven mocked tests passed. The user reported final verification: full backend regression **69/69 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live API verification remains unverified; this update does not claim commit or push completion. No agent or tool calling was added. See [Phase 7A details](phase-7a-gemini.md).
 
 ---
 
@@ -1288,12 +1301,13 @@ Phase 4   ✅
 
 AGENT FOUNDATION
 ────────────────────────────────
-Phase 5   🔄  ← WE ARE HERE
+Phase 5   ✅
 
 LLM & AGENTIC AI
 ────────────────────────────────
-Phase 6   ⏳
-Phase 7   ⏳
+Phase 6   Implemented; focused tests passed; committed
+Phase 7   ⏳ Bedrock deferred
+Phase 7A  🔄 Gemini adapter; final local verification passed ← WE ARE HERE
 Phase 8   ⏳
 Phase 9   ⏳
 Phase 10  ⏳

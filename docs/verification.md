@@ -1,5 +1,14 @@
 # Local verification evidence
 
+## Phase 7A — Final verification reported by the user
+
+- Full backend regression: **69/69 passed**.
+- Frontend API tests: **6/6 passed**.
+- Frontend production build: **passed**.
+- `git diff --check`: **passed with CRLF/LF normalization warnings only**.
+
+These results were supplied by the user after Phase 7A implementation; they were not rerun during this documentation-only update. The earlier 11 focused Gemini tests used mocked/injected clients. Live Gemini and browser verification are not established by these results. Phase 8 has not started.
+
 ## Phase 5 — Focused local tool verification only
 
 - `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_tools.py -v`: **12 tests passed**.
