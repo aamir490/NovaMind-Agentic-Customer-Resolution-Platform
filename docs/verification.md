@@ -1,5 +1,21 @@
 # Local verification evidence
 
+## Phase 8 — Complete; final verification reported by the user
+
+- Phase 8 focused agent tests: **15/15 passed**.
+- Full backend regression: **84/84 passed**.
+- Frontend API tests: **6/6 passed**.
+- Frontend production build: **passed**.
+- `git diff --check`: **passed with CRLF/LF normalization warnings only**.
+
+These results were supplied by the user and were not rerun during this documentation-only update. Phase 8 is complete; Phase 9 is next but has not started. Live Gemini and browser verification are not established by these results.
+
+### Implementation-time focused orchestration verification
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_agent.py -v`: **15/15 passed** with scripted fake providers and existing in-memory tools.
+- Verified bounded loops, tool feedback, structured history, denied names/malformed inputs, pending-only proposals, case binding, per-run proposal limits, partial-write reporting, failure handling, and isolated run state.
+- During implementation, no live Gemini request, full regression, frontend build, browser verification, or dependency installation was performed. Subsequent user-reported verification is recorded above. See [Phase 8 limits](phase-8-agent.md).
+
 ## Phase 7A — Final verification reported by the user
 
 - Full backend regression: **69/69 passed**.

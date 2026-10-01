@@ -8,11 +8,13 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 7A — Gemini LLM Integration (implemented; final local verification reported complete by the user)
+**Current Phase:** ✅ Phase 8 — Customer Resolution Agent (complete following user-reported final verification)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Await explicit approval. Phase 8 is not started; Bedrock remains deferred.
+**Next:** Phase 9 — LangGraph Workflow, pending explicit approval; NOT started. Bedrock remains deferred.
+
+Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
 ### Status Legend
 
@@ -100,8 +102,8 @@ Interview Mastery
 | 6 | LLM Foundation | Implemented; focused tests passed; committed |
 | 7 | Amazon Bedrock Integration | ⏳ |
 | **7A** | **Gemini LLM Integration** | **🔄 Implemented; final local verification passed** |
-| 8 | Customer Resolution Agent | ⏳ |
-| 9 | LangGraph Workflow | ⏳ |
+| 8 | Customer Resolution Agent | ✅ Complete; final verification passed |
+| 9 | LangGraph Workflow | ⏳ Next; not started |
 | 10 | Human-in-the-Loop Agent Workflow | ⏳ |
 | 11 | Knowledge Base & RAG | ⏳ |
 | 12 | Conversation Memory & Persistence | ⏳ |
@@ -480,7 +482,9 @@ The isolated Google GenAI adapter implements the Phase 6 interface with environm
 
 # 🤖 AGENTIC AI
 
-## Phase 8 — Customer Resolution Agent ⏳
+## Phase 8 — Customer Resolution Agent ✅ Complete
+
+Implemented: validated request/result contracts, bounded structured LLM/tool loop, existing Phase 5 allowlist, per-run audit history, one case-bound pending proposal per run, and application-rendered informational/human-review outcomes. Final verification reported by the user: **15/15 focused agent tests**, **84/84 backend regression tests**, **6/6 frontend API tests**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. No live Gemini verification is claimed. See [contracts, usage, and limitations](phase-8-agent.md). Phase 8 is complete; Phase 9 is next but has not started.
 
 **Goal:** Build the first AI agent capable of reasoning about customer-support cases through controlled tools.
 
@@ -515,6 +519,8 @@ The agent must not independently authorize sensitive business actions.
 ---
 
 ## Phase 9 — LangGraph Workflow ⏳
+
+**Status:** Next phase; awaiting explicit approval. NOT started.
 
 **Goal:** Move agent execution into an explicit stateful workflow.
 
@@ -1307,9 +1313,9 @@ LLM & AGENTIC AI
 ────────────────────────────────
 Phase 6   Implemented; focused tests passed; committed
 Phase 7   ⏳ Bedrock deferred
-Phase 7A  🔄 Gemini adapter; final local verification passed ← WE ARE HERE
-Phase 8   ⏳
-Phase 9   ⏳
+Phase 7A  Gemini adapter; final local verification passed
+Phase 8   ✅ Complete; final verification passed
+Phase 9   ⏳ NEXT — awaiting approval; NOT started
 Phase 10  ⏳
 
 KNOWLEDGE & STATE

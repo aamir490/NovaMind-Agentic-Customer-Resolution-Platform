@@ -1,8 +1,10 @@
 # Current local baseline
 
+Phase 8 adds a standalone in-process `ResolutionAgent` over `StructuredLLM` and `LocalTools`. It is bounded, records per-run history, and can only create pending proposals through existing services. It can be composed with the Gemini adapter but is not wired into HTTP routes or the frontend. Fifteen fake-provider tests passed; live agent behavior remains unverified. See [Phase 8](../phase-8-agent.md). The API/UI baseline below remains unchanged.
+
 Status: Phase 5 local tool layer over Phase 4 proposal/review services, with the unchanged Phase 3 case-review UI, extending Phase 2 operations, the Phase 1 domain, and the accepted Phase 0B scaffold. This document describes only current behavior.
 
-Phase 5 exposes `app.state.local_tools` for in-process Python calls. An explicit eight-tool allowlist validates inputs and delegates to the same case, business-operation, and proposal services used by the APIs. Proposal creation is the only write tool; human review and execution are excluded. There is no agent, SDK adapter, or new HTTP route. See [tool contracts and limits](../phase-5-tools.md).
+Phase 5 exposes `app.state.local_tools` for in-process Python calls. An explicit eight-tool allowlist validates inputs and delegates to the same case, business-operation, and proposal services used by the APIs. Proposal creation is the only write tool; human review and execution are excluded. Phase 5 itself added no agent, SDK adapter, or HTTP route. See [tool contracts and limits](../phase-5-tools.md).
 
 Phase 4 adds an independent in-memory proposal service wired to the existing case store. It records proposed actions and allows one explicit approve/reject transition under a process-local lock. Reviewer labels are unverified; no authenticated authorization or financial execution exists. See [proposal contracts and limitations](../phase-4-proposals.md).
 
@@ -32,7 +34,7 @@ The frontend uses native fetch and React state; no router or separate state/API 
 
 ## Absent capabilities
 
-- No agent.
+- No agent connected to HTTP routes or the frontend.
 - No Bedrock.
 - No verified resolution authorization or action execution. Eligibility uses demonstration policy and unverified scenario inputs only.
 - No database.
