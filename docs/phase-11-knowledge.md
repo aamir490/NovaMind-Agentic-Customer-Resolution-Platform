@@ -1,6 +1,6 @@
 # Phase 11 — Local knowledge retrieval
 
-**Phase 11 complete**, following independent verification reported by the user. Phase 12 is next, pending approval; it has NOT started.
+**Phase 11 complete**, following independent verification reported by the user. Phase 12 subsequently added local conversation persistence; see [its implementation, focused verification, and limitations](phase-12-conversations.md). Phase 13 has NOT started.
 
 ## Corpus and contracts
 
@@ -65,4 +65,4 @@ These results were recorded without rerunning tests or builds during this docume
 
 **15/15 passed**: corpus validation/order, normalized chunk spans and IDs, deterministic vectors/ranking/ties, query/top-k bounds, missing/empty/invalid corpora, embedding/output errors, metadata trust contracts, read-only behavior, Phase 8/9 evidence parity, malicious-tool denial, deterministic eligibility preservation, HITL pause/resume with retained citations, and graph termination on retrieval failure.
 
-During implementation, no live Gemini/embedding/network calls, full regression, frontend build, or browser checks ran; subsequent independent results are recorded above. Retrieval remains local lexical/token-cosine only, with no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted information; deterministic business rules and HITL remain authoritative. No dependencies were added or installed. No Qdrant, OpenSearch, Pinecone, Bedrock Knowledge Bases, S3, production persistence, or authentication exists. Phase 10 limitations remain: reviewer identity is unauthenticated, checkpoints are lost on restart, no durable recovery exists, and approval/rejection executes no actions. Phase 12 memory/persistence has not started.
+During implementation, no live Gemini/embedding/network calls, full regression, frontend build, or browser checks ran; subsequent independent results are recorded above. Retrieval remains local lexical/token-cosine only, with no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted information; deterministic business rules and HITL remain authoritative. No dependencies were added or installed. No Qdrant, OpenSearch, Pinecone, Bedrock Knowledge Bases, S3, production persistence, or authentication exists. Phase 10 limitations remain: reviewer identity is unauthenticated, checkpoints are lost on restart, no durable workflow recovery exists, and approval/rejection executes no actions. Phase 12 adds local conversation text durability only; it does not remove those workflow limitations.

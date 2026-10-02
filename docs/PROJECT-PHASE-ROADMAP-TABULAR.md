@@ -1,4 +1,6 @@
-Current status: **Phase 11 complete**, following user-reported independent verification: focused Knowledge/RAG tests **15/15 passed**, full backend regression **144/144 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Retrieval remains local lexical/token-cosine only; no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted information; deterministic business rules and HITL remain authoritative. Phase 12 is **next, pending approval; NOT started**. No new commit/push completion is claimed.
+Current status: **Phase 12 complete**, following user-reported independent verification: Phase 12 focused conversation/persistence tests **25/25 passed**, full backend regression **169/169 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. No new commit/push completion is claimed. See [Phase 12 verification and limitations](phase-12-conversations.md). **Phase 13 is next, pending approval; NOT started.**
+
+SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions or automatic replay, and no authentication, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
 | Phase | Name | Main Goal |
 |---|---|---|
@@ -17,7 +19,7 @@ Current status: **Phase 11 complete**, following user-reported independent verif
 | **9** | LangGraph Workflow — VERIFIED BASELINE | Retained unchanged; [25 implementation-time focused tests](phase-9-langgraph.md) |
 | **10** | Human-in-the-Loop Agent Workflow — COMPLETE | Independent verification passed; [results and limitations](phase-10-hitl.md) |
 | **11** | Knowledge Base & RAG — COMPLETE | Independent verification passed; [results and limitations](phase-11-knowledge.md) |
-| **12** | Conversation Memory & Persistence | Durable cases, conversations and workflow state |
+| **12** | Conversation Memory & Persistence — COMPLETE | Independent verification passed; durable conversation memory only; [results and limitations](phase-12-conversations.md) |
 | **13** | Authentication & Authorization | Users, roles and protected operations |
 | **14** | Guardrails & AI Safety Controls | Input/output/tool/action safeguards |
 | **15** | AI Evaluation & Testing | Quality, tool-use, RAG and workflow evaluations |

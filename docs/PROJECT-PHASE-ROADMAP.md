@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** ✅ Phase 11 — Knowledge Base & RAG (complete following user-reported independent verification)
+**Current Phase:** ✅ Phase 12 — Conversation Memory & Persistence (complete following user-reported independent verification)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 12 — Conversation Memory & Persistence, pending explicit approval; NOT started. Bedrock remains deferred.
+**Next:** Phase 13 — Authentication & Authorization, pending explicit approval; NOT started. Bedrock remains deferred. Phase 12 verification results are recorded below; no new commit/push completion is claimed.
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -106,7 +106,7 @@ Interview Mastery
 | 9 | LangGraph Workflow | Verified baseline per user; retained unchanged |
 | 10 | Human-in-the-Loop Agent Workflow | ✅ Complete; independent verification passed |
 | 11 | Knowledge Base & RAG | ✅ Complete; independent verification passed |
-| 12 | Conversation Memory & Persistence | ⏳ |
+| 12 | Conversation Memory & Persistence | ✅ Complete; independent verification passed |
 | 13 | Authentication & Authorization | ⏳ |
 | 14 | Guardrails & AI Safety Controls | ⏳ |
 | 15 | AI Evaluation & Testing | ⏳ |
@@ -654,34 +654,34 @@ Grounded Response
 
 # 💾 MEMORY & PERSISTENCE
 
-## Phase 12 — Conversation Memory & Persistence ⏳
+## Phase 12 — Conversation Memory & Persistence ✅ Complete
 
-**Status:** Next phase; awaiting explicit approval. NOT started.
+**Status:** Complete following user-reported independent verification: Phase 12 focused conversation/persistence tests **25/25 passed**, full backend regression **169/169 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. No new commit/push completion is claimed. See [contracts, configuration, verification, and limitations](phase-12-conversations.md).
 
-**Goal:** Replace temporary in-memory state with appropriate durable storage.
+**Goal:** Persist local conversation text while keeping memory, checkpoints, business state, and audit history separate.
 
-### Planned Persistence Areas
+### Implemented scope
 
-- Customers
-- Orders
-- Cases
-- Proposals
-- Conversation history
-- Agent state
-- Workflow checkpoints
-- Audit history
+- Validated immutable conversation/message contracts and a replaceable create/load/list/append store interface.
+- Standard-library SQLite storage, stable case-bound conversation UUIDs, server timestamps, and transactional sequence ordering.
+- Optional memory integration for Phase 8/9 agents and Phase 10 HITL; stored text is bounded UNTRUSTED CONTEXT.
+- Default history limits: latest 20 messages within a 16000-character serialized envelope.
+- Safe failures for missing/invalid/corrupt data and cross-case access; no automatic business-operation replay.
+- Temporary-database tests cover recreation, isolation, ordering, RAG/HITL preservation, and malicious memory.
 
 ### Important Architecture Separation
 
 ```text
-Durable Business State
+Authoritative Business State
         ≠
 Conversation Memory
         ≠
 Agent Workflow State
+        ≠
+Audit History
 ```
 
-Each type of state should have a clear responsibility.
+SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions or automatic replay, and no authentication, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state. No dependencies or cloud infrastructure were added. Phase 13 is next, has NOT started, and requires approval.
 
 ---
 
@@ -1337,11 +1337,11 @@ Phase 10  ✅ Complete; independent verification passed
 KNOWLEDGE & STATE
 ────────────────────────────────
 Phase 11  ✅ Complete; independent verification passed
-Phase 12  ⏳ NEXT — awaiting approval; NOT started
+Phase 12  ✅ Complete; independent verification passed
 
 SECURITY & AI QUALITY
 ────────────────────────────────
-Phase 13  ⏳
+Phase 13  ⏳ NEXT — awaiting approval; NOT started
 Phase 14  ⏳
 Phase 15  ⏳
 Phase 16  ⏳

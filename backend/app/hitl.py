@@ -18,6 +18,7 @@ from .llm import StructuredLLM
 from .proposals import HumanReview, ProposalService, ProposalStatus, ProposedAction
 from .service import ConflictError, NotFoundError
 from .tools import LocalTools
+from .conversations import ConversationService, ConversationError, finish_memory
 
 
 class ReviewRequired(Contract):
@@ -63,6 +64,7 @@ class HITLState(Contract):
 
 
 class WorkflowResult(Contract):
+    conversation_id: UUID | None = None
     workflow_id: UUID
     status: Literal["REVIEW_REQUIRED", "REVIEWED", "COMPLETED", "FAILED"]
     message: str
@@ -80,9 +82,10 @@ class ResumeRejected(Contract):
 
 class HITLWorkflow:
     def __init__(self, llm: StructuredLLM, tools: LocalTools, proposals: ProposalService,
-                 config: AgentConfig | None = None) -> None:
+                 config: AgentConfig | None = None, *, memory: ConversationService | None = None) -> None:
         self._config = config or AgentConfig()
-        self._baseline = GraphResolutionAgent(llm, tools, self._config)
+        self._baseline = GraphResolutionAgent(llm, tools, self._config, memory=memory)
+        self._memory = memory
         self._proposals = proposals
         self._lock = RLock()
         self._runs: dict[UUID, str] = {}
@@ -226,6 +229,16 @@ class HITLWorkflow:
                 status="FAILED" if agent_result is None or agent_result.error else "COMPLETED",
                 agent_result=agent_result, error=agent_result.error if agent_result else "WORKFLOW_ERROR",
                 message=agent_result.customer_response if agent_result else "Workflow stopped. No action was executed.")
+        if state.agent.memory_started:
+            result = result.model_copy(update={"conversation_id": state.agent.request.conversation_id})
+            try:
+                finish_memory(self._memory, state.agent.request.conversation_id, state.agent.request.case_id,
+                              result.message)
+            except ConversationError as failure:
+                # Never replay a proposal/review because a text write failed. A paused
+                # checkpoint remains resumable; report the independent memory failure.
+                result = result.model_copy(update={"error": failure.code,
+                    "message": result.message + " Conversation response could not be saved; do not replay the operation."})
         self._runs[workflow_id] = result.status
         return result
 
