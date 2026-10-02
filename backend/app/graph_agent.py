@@ -15,6 +15,7 @@ from .conversations import (ConversationService, ConversationError, MEMORY_INSTR
                             begin_memory, finish_memory)
 from .security import SecurityError
 from .guardrails import GuardrailError, SAFETY_INSTRUCTIONS, check_payload
+from .observability import observed
 
 
 class GraphState(Contract):
@@ -67,6 +68,7 @@ class GraphResolutionAgent:
     def run(self, request: AgentRequest) -> AgentResult:
         return self.run_state(request).final_result
 
+    @observed("agent.graph")
     def run_state(self, request: AgentRequest) -> GraphState:
         """Run fresh state only; callers cannot inject history, counters, or resume a write."""
         state = GraphState(request=AgentRequest.model_validate(request))

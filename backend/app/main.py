@@ -14,6 +14,7 @@ from .proposals import ProposalService
 from .service import CaseService, ConflictError, NotFoundError
 from .tools import LocalTools
 from .security import AuthenticationProvider, LocalAuthenticationProvider, SecurityError, authenticated
+from .observability import LocalObserver, observing, span
 
 
 class HealthResponse(BaseModel):
@@ -26,7 +27,8 @@ def health() -> HealthResponse:
     return HealthResponse()
 
 
-def create_app(*, auth_provider: AuthenticationProvider | None = None) -> FastAPI:
+def create_app(*, auth_provider: AuthenticationProvider | None = None,
+               observer: LocalObserver | None = None) -> FastAPI:
     app = FastAPI(
         title="NovaMind API",
         description="Local authenticated case/proposal operations. No action execution.",
@@ -39,6 +41,7 @@ def create_app(*, auth_provider: AuthenticationProvider | None = None) -> FastAP
         app.state.case_service, app.state.business_operations, app.state.proposal_service,
     )
     app.state.auth_provider = auth_provider if auth_provider is not None else LocalAuthenticationProvider()
+    app.state.observer = observer if observer is not None else LocalObserver()
 
     @app.middleware("http")
     async def authentication(request: Request, call_next):
@@ -55,6 +58,24 @@ def create_app(*, auth_provider: AuthenticationProvider | None = None) -> FastAP
             except SecurityError as error:
                 return security_response(error)
         return await call_next(request)
+
+    @app.middleware("http")
+    async def request_trace(request: Request, call_next):
+        # Registered last: wraps authentication, including rejected requests.
+        # Incoming trace headers/paths/query strings are never trusted or recorded.
+        with observing(app.state.observer), span("http") as current:
+            current.annotate(method=request.method)
+            try:
+                response = await call_next(request)
+            except Exception:
+                current.annotate(status_code=500)
+                raise
+            current.annotate(status_code=response.status_code)
+            if response.status_code >= 400:
+                current.fail({401: "UNAUTHENTICATED", 403: "FORBIDDEN", 404: "NOT_FOUND",
+                              409: "CONFLICT", 422: "INVALID_INPUT"}.get(response.status_code))
+            response.headers["X-Trace-ID"] = current.trace_id
+            return response
 
     def security_response(error: SecurityError):
         return JSONResponse(status_code=error.status_code, content={"detail": error.detail},

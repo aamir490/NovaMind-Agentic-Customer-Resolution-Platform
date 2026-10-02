@@ -6,7 +6,21 @@ import httpx
 from google import genai
 from google.genai import errors, types
 
-from .llm import LLMRequest, LLMResponse, ProviderFailure
+from .llm import LLMRequest, LLMResponse, ProviderFailure, TokenUsage
+
+
+def _usage(response):
+    """Optional SDK metadata; missing/invalid counts must not change completion behavior."""
+    try:
+        metadata = getattr(response, "usage_metadata", None)
+        values = {}
+        for target, source in (("input_tokens", "prompt_token_count"), ("output_tokens", "candidates_token_count"),
+                               ("total_tokens", "total_token_count")):
+            value = getattr(metadata, source, None)
+            values[target] = value if type(value) is int and 0 <= value <= 10**9 else None
+        return TokenUsage(**values)
+    except Exception:
+        return None
 
 
 class GeminiProvider:
@@ -76,18 +90,18 @@ class GeminiProvider:
 
         feedback = response.prompt_feedback
         if feedback and feedback.block_reason and feedback.block_reason != "BLOCKED_REASON_UNSPECIFIED":
-            return LLMResponse(text="", finish_reason="refusal")
+            return LLMResponse(text="", finish_reason="refusal", usage=_usage(response))
         candidates = response.candidates or []
         if len(candidates) != 1:
-            return LLMResponse(text="", finish_reason="stop")  # Phase 6 rejects empty JSON.
+            return LLMResponse(text="", finish_reason="stop", usage=_usage(response))  # Phase 6 rejects empty JSON.
         candidate = candidates[0]
         reason = candidate.finish_reason
         if reason == "MAX_TOKENS":
-            return LLMResponse(text="", finish_reason="length")
+            return LLMResponse(text="", finish_reason="length", usage=_usage(response))
         if reason in {"SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "IMAGE_SAFETY"}:
-            return LLMResponse(text="", finish_reason="refusal")
+            return LLMResponse(text="", finish_reason="refusal", usage=_usage(response))
         if reason != "STOP":
-            return LLMResponse(text="", finish_reason="stop")
+            return LLMResponse(text="", finish_reason="stop", usage=_usage(response))
         parts = candidate.content.parts if candidate.content else []
         text = []
         for part in parts or []:
@@ -96,6 +110,6 @@ class GeminiProvider:
             # Never interpret tool calls, code, or media as a completed text response.
             fields = part.model_dump(exclude_none=True)
             if set(fields) - {"text", "thought", "thought_signature"} or part.text is None:
-                return LLMResponse(text="", finish_reason="stop")
+                return LLMResponse(text="", finish_reason="stop", usage=_usage(response))
             text.append(part.text)
-        return LLMResponse(text="".join(text), finish_reason="stop")
+        return LLMResponse(text="".join(text), finish_reason="stop", usage=_usage(response))

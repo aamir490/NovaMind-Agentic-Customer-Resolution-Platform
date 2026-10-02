@@ -20,6 +20,7 @@ from .service import ConflictError, NotFoundError
 from .tools import LocalTools
 from .conversations import ConversationService, ConversationError, finish_memory
 from .security import Role, current_identity, require_roles
+from .observability import observed
 
 
 class ReviewRequired(Contract):
@@ -244,6 +245,7 @@ class HITLWorkflow:
         self._runs[workflow_id] = result.status
         return result
 
+    @observed("hitl.start")
     def start(self, request: AgentRequest) -> WorkflowResult:
         current_identity()
         request = AgentRequest.model_validate(request)
@@ -253,6 +255,7 @@ class HITLWorkflow:
             return self._drive(workflow_id, {"workflow_id": str(workflow_id),
                                           "agent": GraphState(request=request).model_dump(mode="json")})
 
+    @observed("hitl.resume")
     def resume(self, payload: HumanDecision | dict) -> WorkflowResult | ResumeRejected:
         require_roles(Role.REVIEWER, Role.ADMIN)
         try:

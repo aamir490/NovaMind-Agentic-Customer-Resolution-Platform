@@ -1,6 +1,6 @@
 # Phase 15 — AI Evaluation & Testing
 
-Local Phase 15 implementation is complete with **15/15 focused tests passed** and **54/54 deterministic evaluation scenarios passed** on October 2, 2026. No broader regression, frontend verification, live model verification, production readiness, or commit/push completion is claimed. **Phase 16 is not started.**
+Local Phase 15 implementation is complete with **15/15 focused tests passed** and **54/54 deterministic evaluation scenarios passed** on October 2, 2026. No broader regression, frontend verification, live model verification, production readiness, or commit/push completion is claimed. These are historical results; subsequent [Phase 16 observability](phase-16-observability.md) preserves the evaluation framework and security boundaries.
 
 ## Approach and scope
 
@@ -59,4 +59,4 @@ There are **no dependency changes**. The harness uses the Python standard librar
 
 Scripted decisions cannot measure Gemini/Bedrock response quality, reasoning, stochastic tool selection, or hallucination prevalence. The tiny hand-authored corpus query set is not a representative retrieval benchmark. Guardrail cases cover known supported patterns, not attack detection recall or false-positive rates across real traffic. Fixed response templates constrain rendered claims but do not prove model-generated proposal rationale or customer-supplied facts true. Pending proposals do not establish eligibility or grant authorization.
 
-Focused parity and repeated-run checks are regression evaluation for these scenarios only, not a rerun of all earlier tests. No load, latency, cost, remote timeout transport, concurrency stress, production identity, or cloud integration is evaluated. The socket guard is a test aid, not a sandbox against hostile Python/native code. Existing local-authentication, conversation-only SQLite persistence, in-memory business/checkpoint/audit storage, restart recovery, and no-execution limitations remain. **Phase 16 is not started.**
+Focused parity and repeated-run checks are regression evaluation for these scenarios only, not a rerun of all earlier tests. No load, latency, cost, remote timeout transport, concurrency stress, production identity, or cloud integration is evaluated. The socket guard is a test aid, not a sandbox against hostile Python/native code. Existing local-authentication, conversation-only SQLite persistence, in-memory business/checkpoint/audit storage, restart recovery, and no-execution limitations remain. See the subsequent [Phase 16 local observability scope](phase-16-observability.md).

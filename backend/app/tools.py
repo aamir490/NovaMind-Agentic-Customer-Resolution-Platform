@@ -14,6 +14,7 @@ from .service import CaseService, ConflictError, NotFoundError
 from .knowledge import KnowledgeError, KnowledgeQuery, KnowledgeRetriever, LocalKnowledgeRetriever, RetrievalResult, retrieve_safely
 from .security import Authorization, SecurityError, current_identity
 from .guardrails import GuardrailError, check_payload
+from .observability import observed
 
 
 class CustomerLookup(RequestModel):
@@ -132,6 +133,7 @@ class LocalTools:
             output_schema=binding.output_model.model_json_schema(),
         ) for name, binding in self._bindings.items()]
 
+    @observed("tool")
     def invoke(self, name: str, arguments: dict[str, object]) -> ToolSuccess | ToolFailure:
         try:
             current_identity()

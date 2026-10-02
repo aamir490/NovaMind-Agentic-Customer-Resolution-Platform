@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 15 — AI Evaluation & Testing (local implementation; 15/15 focused tests and 54/54 evaluation scenarios passed; broader verification not run)
+**Current Phase:** 🔄 Phase 16 — Observability & Auditability (local implementation; 18/18 focused tests passed; broader verification not run)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 16 — Observability & Auditability, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 15 reuses Phase 1–14 components without application-code or dependency changes; no new full-regression or commit/push completion is claimed. See [Phase 15 evaluations and limitations](phase-15-evaluations.md).
+**Next:** Phase 17 — Containerization, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 16 adds local observability while retaining Phase 1–15 behavior/security boundaries; no new full-regression or commit/push completion is claimed. See [Phase 16 setup, verification, and limitations](phase-16-observability.md).
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -110,7 +110,7 @@ Interview Mastery
 | 13 | Authentication & Authorization | 🔄 Local implementation; 27 focused tests passed |
 | 14 | Guardrails & AI Safety Controls | 🔄 Local implementation; 22 focused tests passed |
 | 15 | AI Evaluation & Testing | 🔄 Local implementation; 15 focused tests and 54 scenarios passed |
-| 16 | Observability & Auditability | ⏳ |
+| 16 | Observability & Auditability | 🔄 Local implementation; 18 focused tests passed |
 | 17 | Containerization | ⏳ |
 | 18 | AWS Infrastructure Foundation | ⏳ |
 | 19 | AWS Application Deployment | ⏳ |
@@ -760,17 +760,19 @@ Business Authorization
 - Failure handling
 - Regression evaluation
 
-The versioned local dataset drives both agent implementations, real deterministic policies/tools, lexical RAG, Phase 14 guardrails, and authenticated HITL with scripted model responses. Reports include per-check actual/expected values, category pass counts/rates, retrieval precision/recall/reciprocal rank, and explicit overall pass/fail. Focused tests verify repeatability, loop/graph parity, offline enforcement, and that incorrect outcomes fail the grader. Response quality/groundedness checks concern application templates and evidence integrity; no live model quality or semantic hallucination score is claimed. See [Phase 15 approach, rubrics, results, and limitations](phase-15-evaluations.md). **Phase 16 is NOT started.**
+The versioned local dataset drives both agent implementations, real deterministic policies/tools, lexical RAG, Phase 14 guardrails, and authenticated HITL with scripted model responses. Reports include per-check actual/expected values, category pass counts/rates, retrieval precision/recall/reciprocal rank, and explicit overall pass/fail. Focused tests verify repeatability, loop/graph parity, offline enforcement, and that incorrect outcomes fail the grader. Response quality/groundedness checks concern application templates and evidence integrity; no live model quality or semantic hallucination score is claimed. See [Phase 15 approach, rubrics, results, and limitations](phase-15-evaluations.md). Phase 16 adds passive local diagnostics below; these evaluation results remain historical evidence.
 
 ---
 
 # 📈 OBSERVABILITY
 
-## Phase 16 — Observability & Auditability ⏳
+## Phase 16 — Observability & Auditability 🔄
 
 **Goal:** Make application and agent behavior observable and diagnosable.
 
-### Planned Capabilities
+**Status:** Local implementation; **18/18 focused tests passed**. No dependency change, full regression, frontend build, live network/Gemini/AWS call, or commit/push completion is claimed. `git diff --check` passed with line-ending warnings only.
+
+### Implemented Local Capabilities
 
 - Structured application logs
 - Request tracing
@@ -782,6 +784,8 @@ The versioned local dataset drives both agent implementations, real deterministi
 - Token usage
 - Audit events
 - Human-review history
+
+Bounded metadata-only events cover HTTP authentication/routing, both agents, tools, structured model calls, eligibility, proposals, and HITL. Server-generated trace/span IDs correlate nested operations; error/latency/model/token metrics distinguish known usage from unknown counts. Successful review events derive actor IDs from authenticated context. Diagnostics require REVIEWER/ADMIN. Telemetry failures never retry or authorize business operations. Existing audit history, business rules, security, and no-execution boundaries remain authoritative. See [Phase 16 configuration, verification, and limitations](phase-16-observability.md). Remote exports, durable audit storage, production monitoring, and per-model cost accounting are not implemented. **Phase 17 is NOT started.**
 
 ### Target
 
@@ -1350,11 +1354,11 @@ SECURITY & AI QUALITY
 Phase 13  🔄 Local implementation; 27 focused tests passed; broader verification pending
 Phase 14  🔄 Local guardrails implementation; 22 focused tests passed
 Phase 15  🔄 Local evaluation; 15 focused tests and 54 scenarios passed
-Phase 16  ⏳ NOT started; outside authorized scope
+Phase 16  🔄 Local observability; 18 focused tests passed
 
 CLOUD & PRODUCTION
 ────────────────────────────────
-Phase 17  ⏳
+Phase 17  ⏳ NOT started; outside authorized scope
 Phase 18  ⏳
 Phase 19  ⏳
 Phase 20  ⏳

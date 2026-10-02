@@ -8,6 +8,7 @@ from pydantic import Field
 
 from .domain import Name, Record
 from .service import CaseService, ConflictError, NotFoundError
+from .observability import observed
 
 
 class ReturnReason(StrEnum):
@@ -113,6 +114,7 @@ class BusinessOperations:
             raise NotFoundError("Policy not found")
         return self._policies[policy_id]
 
+    @observed("eligibility")
     def check_eligibility(self, order_id: UUID, request: EligibilityInput) -> EligibilityResult:
         self._cases.get_customer(request.customer_id)
         order = self._cases.get_order(order_id)

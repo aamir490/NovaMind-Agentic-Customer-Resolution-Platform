@@ -5,6 +5,7 @@ from typing import Annotated, Generic, Literal, Protocol, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
 from .guardrails import GuardrailError, MAX_PROMPT_CHARS, validate_response_json
+from .observability import annotate, observed
 
 
 class LLMModel(BaseModel):
@@ -24,9 +25,16 @@ class LLMRequest(LLMModel):
     max_output_tokens: int = Field(default=512, strict=True, ge=1, le=32768)
 
 
+class TokenUsage(LLMModel):
+    input_tokens: int | None = Field(default=None, strict=True, ge=0, le=10**9)
+    output_tokens: int | None = Field(default=None, strict=True, ge=0, le=10**9)
+    total_tokens: int | None = Field(default=None, strict=True, ge=0, le=10**9)
+
+
 class LLMResponse(LLMModel):
     text: str
     finish_reason: Literal["stop", "length", "refusal"]
+    usage: TokenUsage | None = None
 
 
 FailureCode = Literal["TIMEOUT", "UNAVAILABLE", "REFUSED", "INCOMPLETE", "INVALID_RESPONSE", "INPUT_LIMIT"]
@@ -66,13 +74,20 @@ class StructuredLLM:
     def __init__(self, provider: LLMProvider) -> None:
         self._provider = provider
 
+    @observed("llm")
     def generate(self, request: LLMRequest, output_model: type[Output]) -> LLMSuccess[Output] | LLMFailure:
         # Invalid caller input is a programming error, distinct from generation failure.
         request = LLMRequest.model_validate(request)
+        provider_type = (type(self._provider).__module__, type(self._provider).__name__)
+        provider = {("backend.app.gemini", "GeminiProvider"): "gemini",
+                    (__name__, "FakeLLMProvider"): "fake"}.get(provider_type, "other")
+        annotate(provider_called=False, provider=provider, output_token_limit=request.max_output_tokens,
+                 input_tokens=None, output_tokens=None, total_tokens=None)
         if sum(len(message.content) for message in request.messages) > MAX_PROMPT_CHARS:
             return LLMFailure(code="INPUT_LIMIT", message="Model context exceeds the local safety limit")
         schema = output_model.model_json_schema()
         try:
+            annotate(provider_called=True)
             raw = self._provider.generate(request, response_schema=schema)
         except ProviderFailure as error:
             return LLMFailure(code=error.code, message="Provider could not complete the request")
@@ -80,6 +95,8 @@ class StructuredLLM:
             response = LLMResponse.model_validate(raw)
         except ValidationError:
             return LLMFailure(code="INVALID_RESPONSE", message="Invalid provider response envelope")
+        if response.usage is not None:
+            annotate(**response.usage.model_dump())
         if response.finish_reason == "refusal":
             return LLMFailure(code="REFUSED", message="Provider declined the request")
         if response.finish_reason == "length":

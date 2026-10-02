@@ -12,6 +12,7 @@ from .conversations import (ConversationService, ConversationError, MEMORY_INSTR
                             begin_memory, finish_memory)
 from .security import SecurityError
 from .guardrails import GuardrailError, SAFETY_INSTRUCTIONS, check_payload
+from .observability import observed
 
 
 class Contract(BaseModel):
@@ -72,6 +73,7 @@ class ResolutionAgent:
         self._config = config or AgentConfig()
         self._memory = memory
 
+    @observed("agent.loop")
     def run(self, request: AgentRequest) -> AgentResult:
         request = AgentRequest.model_validate(request)
         history: list[AuditEntry] = []

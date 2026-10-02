@@ -16,7 +16,9 @@ Phase 13 adds local authentication and authorization. Configure `create_app(auth
 
 Phase 14 adds deterministic local guardrails for agent input, selected memory, tool arguments/results, and structured model output. Existing callers need no configuration changes. Explicit injection patterns and excessive/ambiguous payloads fail safely; authentication, deterministic policy, tool restrictions, and HITL remain authoritative. No new dependencies or live services are required. See [Phase 14 limits, failure codes, and focused verification](../docs/phase-14-guardrails.md).
 
-Phase 15 evaluates these existing components through the separate `evaluations` package without changing backend code or dependencies. **15/15 focused tests and 54/54 local scenarios passed** using scripted providers, isolated stores, and blocked network I/O. See [Phase 15 metrics and limits](../docs/phase-15-evaluations.md). Phase 16 has NOT started.
+Phase 15 evaluates these existing components through the separate `evaluations` package without changing backend code or dependencies in that phase. **15/15 focused tests and 54/54 local scenarios passed** using scripted providers, isolated stores, and blocked network I/O. These are historical results; see [Phase 15 metrics and limits](../docs/phase-15-evaluations.md).
+
+Phase 16 adds passive local observability around existing execution boundaries. `create_app()` owns a bounded observer and returns server-generated `X-Trace-ID` headers on handled responses. Programmatic callers bind `observing(observer)` separately from authentication; observer snapshots require REVIEWER/ADMIN. Optional local JSON logging, error/latency metrics, nullable provider token counts, and proposal/review metadata add no execution authority. **18/18 focused tests passed**, without dependencies or live services. See [setup and limits](../docs/phase-16-observability.md). Phase 17 has NOT started.
 
 Keep business rules independent of FastAPI and Strands. Keep authorization outside model decisions. Review V1 components individually before reuse.
 

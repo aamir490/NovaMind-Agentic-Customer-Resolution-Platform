@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from .domain import Description, Name, Record
 from .schemas import RequestModel
 from .service import CaseService, ConflictError, NotFoundError
+from .observability import observed
 
 
 class ProposedAction(StrEnum):
@@ -52,6 +53,7 @@ class ProposalService:
         self._proposals: dict[UUID, ResolutionProposal] = {}
         self._lock = RLock()
 
+    @observed("proposal.create")
     def create(self, request: ProposalCreate) -> ResolutionProposal:
         self._cases.get_case(request.case_id)
         with self._lock:
@@ -74,6 +76,7 @@ class ProposalService:
         with self._lock:
             return [proposal for proposal in self._proposals.values() if proposal.case_id == case_id]
 
+    @observed("proposal.review")
     def review(self, proposal_id: UUID, decision: ProposalStatus,
                review: HumanReview) -> ResolutionProposal:
         if decision not in (ProposalStatus.APPROVED, ProposalStatus.REJECTED):

@@ -1,4 +1,4 @@
-Current status: **Phase 15 local evaluation implemented; 15/15 focused tests and 54/54 scenarios passed**, reusing unchanged Phase 1–14 application components and security boundaries. See [Phase 15 checks, metrics, and limitations](phase-15-evaluations.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Earlier phase test counts remain historical evidence. **Phase 16 is NOT started.**
+Current status: **Phase 16 local observability implemented; 18/18 focused tests passed**, retaining Phase 1–15 behavior and security boundaries. See [Phase 16 logs, traces, metrics, audit, and limitations](phase-16-observability.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Earlier phase test counts remain historical evidence. **Phase 17 is NOT started.**
 
 Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions and authenticated reviewer IDs; credentials default to an empty registry. SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, frontend login UI, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
@@ -23,7 +23,7 @@ Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions 
 | **13** | Authentication & Authorization — IMPLEMENTED | Local provider, roles, ownership checks, authenticated reviews; [27 focused tests and limitations](phase-13-security.md) |
 | **14** | Guardrails & AI Safety Controls — IMPLEMENTED LOCALLY | Input/output bounds, injection checks, retained tool/action restrictions; [focused verification and limits](phase-14-guardrails.md) |
 | **15** | AI Evaluation & Testing — IMPLEMENTED LOCALLY | Scripted local cases, explicit rubrics, retrieval metrics, safety/HITL and parity checks; [15 focused tests / 54 scenarios and limitations](phase-15-evaluations.md) |
-| **16** | Observability & Auditability | Logs, traces, metrics and audit trail |
+| **16** | Observability & Auditability — IMPLEMENTED LOCALLY | Bounded safe logs/traces, error/latency/usage metrics, proposal/review audit; [18 focused tests and limits](phase-16-observability.md) |
 | **17** | Containerization | Production Docker setup |
 | **18** | AWS Infrastructure Foundation | VPC, IAM, networking and required AWS resources |
 | **19** | AWS Application Deployment | Deploy frontend/backend/services to AWS |
