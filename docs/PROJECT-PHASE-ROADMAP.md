@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 14 — Guardrails & AI Safety Controls (local implementation; 22/22 focused tests passed; broader verification not run)
+**Current Phase:** 🔄 Phase 15 — AI Evaluation & Testing (local implementation; 15/15 focused tests and 54/54 evaluation scenarios passed; broader verification not run)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 15 — AI Evaluation & Testing, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 14 preserves the Phase 1–13 architecture and security boundaries; no new full-regression or commit/push completion is claimed. See [Phase 14 safeguards and limitations](phase-14-guardrails.md).
+**Next:** Phase 16 — Observability & Auditability, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 15 reuses Phase 1–14 components without application-code or dependency changes; no new full-regression or commit/push completion is claimed. See [Phase 15 evaluations and limitations](phase-15-evaluations.md).
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -109,7 +109,7 @@ Interview Mastery
 | 12 | Conversation Memory & Persistence | ✅ Complete; independent verification passed |
 | 13 | Authentication & Authorization | 🔄 Local implementation; 27 focused tests passed |
 | 14 | Guardrails & AI Safety Controls | 🔄 Local implementation; 22 focused tests passed |
-| 15 | AI Evaluation & Testing | ⏳ |
+| 15 | AI Evaluation & Testing | 🔄 Local implementation; 15 focused tests and 54 scenarios passed |
 | 16 | Observability & Auditability | ⏳ |
 | 17 | Containerization | ⏳ |
 | 18 | AWS Infrastructure Foundation | ⏳ |
@@ -726,7 +726,7 @@ No dependencies, cloud authentication, OAuth/social login, frontend login UI, or
 - Model failure handling
 - Unexpected tool-call handling
 
-Local checks now screen agent input, selected memory, tool arguments, and tool results for explicit injection patterns; bound payloads and model context; and reject ambiguous/invalid model JSON and invalid tool output. Existing authentication, ownership, deterministic policy, tool allowlists, case/proposal/step limits, authenticated HITL, and no-execution boundaries remain authoritative. HITL reuses the guarded graph nodes. No new dependency or live provider/service call is required. See [Phase 14 implementation, focused verification, failure codes, and limitations](phase-14-guardrails.md). Broader regression, production safety, and commit/push completion are not claimed. **Phase 15 is NOT started.**
+Local checks now screen agent input, selected memory, tool arguments, and tool results for explicit injection patterns; bound payloads and model context; and reject ambiguous/invalid model JSON and invalid tool output. Existing authentication, ownership, deterministic policy, tool allowlists, case/proposal/step limits, authenticated HITL, and no-execution boundaries remain authoritative. HITL reuses the guarded graph nodes. No new dependency or live provider/service call is required. See [Phase 14 implementation, focused verification, failure codes, and limitations](phase-14-guardrails.md). Broader regression, production safety, and commit/push completion are not claimed. Phase 15 evaluates these retained boundaries below.
 
 ### Core Principle
 
@@ -740,11 +740,13 @@ Business Authorization
 
 # 🧪 AI EVALUATION
 
-## Phase 15 — AI Evaluation & Testing ⏳
+## Phase 15 — AI Evaluation & Testing 🔄
 
 **Goal:** Measure AI-system behavior instead of relying only on demonstrations.
 
-### Planned Evaluation Areas
+**Status:** **15/15 focused tests and 54/54 local evaluation scenarios passed.** Existing application code/dependencies are unchanged. No broader regression, frontend build, live Gemini/network/AWS call, or commit/push is claimed.
+
+### Implemented Local Evaluation Areas
 
 - Response quality
 - Policy correctness
@@ -757,6 +759,8 @@ Business Authorization
 - Human escalation
 - Failure handling
 - Regression evaluation
+
+The versioned local dataset drives both agent implementations, real deterministic policies/tools, lexical RAG, Phase 14 guardrails, and authenticated HITL with scripted model responses. Reports include per-check actual/expected values, category pass counts/rates, retrieval precision/recall/reciprocal rank, and explicit overall pass/fail. Focused tests verify repeatability, loop/graph parity, offline enforcement, and that incorrect outcomes fail the grader. Response quality/groundedness checks concern application templates and evidence integrity; no live model quality or semantic hallucination score is claimed. See [Phase 15 approach, rubrics, results, and limitations](phase-15-evaluations.md). **Phase 16 is NOT started.**
 
 ---
 
@@ -1345,8 +1349,8 @@ SECURITY & AI QUALITY
 ────────────────────────────────
 Phase 13  🔄 Local implementation; 27 focused tests passed; broader verification pending
 Phase 14  🔄 Local guardrails implementation; 22 focused tests passed
-Phase 15  ⏳ NOT started; outside authorized scope
-Phase 16  ⏳
+Phase 15  🔄 Local evaluation; 15 focused tests and 54 scenarios passed
+Phase 16  ⏳ NOT started; outside authorized scope
 
 CLOUD & PRODUCTION
 ────────────────────────────────

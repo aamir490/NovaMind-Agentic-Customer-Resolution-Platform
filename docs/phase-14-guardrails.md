@@ -1,6 +1,6 @@
 # Phase 14 — Guardrails & AI Safety Controls
 
-Phase 14 implements local safeguards around the existing Phase 1–13 boundaries. **22/22 focused local tests passed.** It introduces no business actions, provider integration, evaluation framework, or Phase 15 work. See the [phase scope](PROJECT-PHASE-ROADMAP.md).
+Phase 14 implements local safeguards around the existing Phase 1–13 boundaries. **22/22 focused local tests passed.** It introduced no business actions, provider integration, evaluation framework, or Phase 15 work. These are historical Phase 14 results; [Phase 15](phase-15-evaluations.md) now evaluates the existing components without changing these safeguards. See the [phase scope](PROJECT-PHASE-ROADMAP.md).
 
 ## Controls and integration
 
@@ -47,4 +47,4 @@ These are local heuristic defenses, not proof against prompt injection or produc
 
 Payload limits bound application processing; they are not transport download limits, token-exact budgets, process isolation, or a timeout for arbitrary host code. No remote safety classifier, PII redaction, malware scanning, or cloud guardrail service is introduced. Existing diagnostic audit/checkpoint data may retain rejected model decisions and must remain untrusted; this phase does not add audit redaction. A tool output failure after a trusted adapter has written data does not roll back that write; callers must inspect current records before retrying. Domain services and raw adapters remain trusted Python components, not sandboxes.
 
-SQLite continues to persist conversation text only. Domain data, workflow checkpoints, and audit history remain in memory; no cross-store transactions, restart recovery, token lifecycle, frontend login, or production deployment is added. **Phase 15 is not started.**
+SQLite continues to persist conversation text only. Domain data, workflow checkpoints, and audit history remain in memory; no cross-store transactions, restart recovery, token lifecycle, frontend login, or production deployment is added. These limitations remain in the subsequent [Phase 15 evaluation](phase-15-evaluations.md).

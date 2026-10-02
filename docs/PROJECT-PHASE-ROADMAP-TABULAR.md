@@ -1,4 +1,4 @@
-Current status: **Phase 14 local guardrails implemented; 22/22 focused tests passed**, preserving the Phase 1–13 architecture and security boundaries. See [Phase 14 checks, verification, and limitations](phase-14-guardrails.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Phase 13's 27/27 focused tests and Phase 12's 169/169 backend and 6/6 frontend API results remain historical evidence. **Phase 15 is NOT started.**
+Current status: **Phase 15 local evaluation implemented; 15/15 focused tests and 54/54 scenarios passed**, reusing unchanged Phase 1–14 application components and security boundaries. See [Phase 15 checks, metrics, and limitations](phase-15-evaluations.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Earlier phase test counts remain historical evidence. **Phase 16 is NOT started.**
 
 Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions and authenticated reviewer IDs; credentials default to an empty registry. SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, frontend login UI, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
@@ -22,7 +22,7 @@ Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions 
 | **12** | Conversation Memory & Persistence — COMPLETE | Independent verification passed; durable conversation memory only; [results and limitations](phase-12-conversations.md) |
 | **13** | Authentication & Authorization — IMPLEMENTED | Local provider, roles, ownership checks, authenticated reviews; [27 focused tests and limitations](phase-13-security.md) |
 | **14** | Guardrails & AI Safety Controls — IMPLEMENTED LOCALLY | Input/output bounds, injection checks, retained tool/action restrictions; [focused verification and limits](phase-14-guardrails.md) |
-| **15** | AI Evaluation & Testing | Quality, tool-use, RAG and workflow evaluations |
+| **15** | AI Evaluation & Testing — IMPLEMENTED LOCALLY | Scripted local cases, explicit rubrics, retrieval metrics, safety/HITL and parity checks; [15 focused tests / 54 scenarios and limitations](phase-15-evaluations.md) |
 | **16** | Observability & Auditability | Logs, traces, metrics and audit trail |
 | **17** | Containerization | Production Docker setup |
 | **18** | AWS Infrastructure Foundation | VPC, IAM, networking and required AWS resources |

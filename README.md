@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 14 — Local guardrails implemented
+## Current stage: V2 Phase 15 — Local AI evaluation implemented
 
-Phase 14 adds local input/output bounds, prompt-injection checks, and tool-result validation while preserving the Phase 1–13 architecture and security boundaries. Verification is limited to focused local tests; broader regression and independent acceptance are not claimed. Phase 15 has NOT started. See [Phase 14 controls, verification, and limitations](docs/phase-14-guardrails.md) and [Phase 13 authentication configuration](docs/phase-13-security.md).
+Phase 15 adds deterministic local evaluation of the existing agents, RAG, guardrails, tool use, structured outputs, safety boundaries, and HITL: **15/15 focused tests and 54/54 evaluation scenarios passed**. Phase 1–14 application code and dependencies remain unchanged. Broader regression and live model quality are not claimed. Phase 16 has NOT started. See [Phase 15 checks, metrics, and limitations](docs/phase-15-evaluations.md).
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -39,7 +39,7 @@ Sensitive actions must follow **PROPOSE -> AUTHORIZE -> EXECUTE -> VERIFY**. The
 - `frontend/`: React/Vite presentation layer.
 - `backend/`: FastAPI, local services, domain rules, controlled agents/tools, and optional SQLite conversation storage.
 - `tests/`: focused domain and local HTTP tests using standard-library unittest.
-- `evaluations/`: intended home for future agent/task evaluation cases; scope notes only today.
+- `evaluations/`: versioned deterministic cases, local runner, scoring rubric, and JSON reports.
 - `infrastructure/`: future AWS planning; no provisioning code.
 - `docs/`: scope, architecture rationale, and learning notes.
 - `learning/`: plain-English learning material, starting with one overview chapter.
@@ -50,6 +50,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- Deterministic local AI evaluation with explicit expected outcomes, per-check/category metrics, retrieval relevance/citation checks, loop/graph parity, HITL scenarios, and an offline-only scripted provider. See [Phase 15 evaluation](docs/phase-15-evaluations.md).
 - Local AI boundary checks for customer input, selected conversation memory, tool arguments/results, and model JSON. Existing allowlists, deterministic policies, authenticated ownership/HITL, and no-execution rules remain authoritative. No new dependencies. See [Phase 14 safeguards and heuristic limitations](docs/phase-14-guardrails.md).
 - Local replaceable bearer authentication with CUSTOMER, REVIEWER, and ADMIN roles; server-side ownership checks on routes, tools, and conversation access; authenticated human-review identity; request-scoped context separate from model/memory/checkpoint data. Business endpoints default to 401 until the host configures credentials. No frontend login UI was added. See [Phase 13 configuration](docs/phase-13-security.md).
 - Local SQLite conversation persistence through a replaceable store, case-bound UUIDs, ordered UTC-stamped user/assistant messages, and bounded untrusted context for Phase 8/9/10 agents. Business state, HITL checkpoints, and audit history remain separate and in memory. See [Phase 12 details](docs/phase-12-conversations.md).
@@ -83,6 +84,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 15: **15/15 focused tests passed**, exercising **54/54 evaluation scenarios** and validating the grader, repeatability, and parity. No previous suite, frontend build, or live service ran. See [metrics and limits](docs/phase-15-evaluations.md). Earlier phase results below remain historical evidence.
 - Phase 14: **22/22 focused local tests passed**; `git diff --check` passed with CRLF/LF normalization warnings only. See the [guardrails guide](docs/phase-14-guardrails.md). Only the Phase 14 suite is run; no live model/network/AWS call or full regression. The results below remain historical evidence.
 - Phase 13: **27/27 focused security tests passed** using local credentials, in-process ASGI transport, scripted models, and isolated SQLite files. No full regression, frontend build, live model/network/AWS calls, or package changes. Earlier fixtures were adapted for explicit authenticated access but those suites were not rerun. See [verification and limitations](docs/phase-13-security.md). Results below are historical phase evidence; Phase 13 supersedes earlier unauthenticated interface/reviewer limitations with local authentication only.
 - Phase 12 independent verification reported by the user: **25/25 focused conversation/persistence tests passed**, **169/169 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. SQLite persists conversation memory only; business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. No cross-store transactions, automatic replay, authentication, encryption, or frontend memory UI exists. Stored conversation text remains untrusted context, not authoritative business state. See [verification and limitations](docs/phase-12-conversations.md).
