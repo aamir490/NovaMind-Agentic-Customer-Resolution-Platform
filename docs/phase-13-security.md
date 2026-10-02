@@ -1,6 +1,6 @@
 # Phase 13 — Local Authentication & Authorization
 
-Implementation and **27/27 focused Phase 13 tests passed**, built on the verified and pushed Phase 12 baseline. Full regression, frontend build, independent acceptance, and commit/push completion are not claimed for these changes. **Phase 14 has NOT started and requires user approval.**
+Implementation and **27/27 focused Phase 13 tests passed**, built on the verified and pushed Phase 12 baseline. Full regression, frontend build, independent acceptance, and commit/push completion are not claimed for these changes. These are historical Phase 13 results. [Phase 14](phase-14-guardrails.md) now adds local AI safeguards while preserving the security boundaries described here; explicit injection patterns can be rejected before reaching a model.
 
 ## Contracts and provider
 
@@ -116,4 +116,4 @@ Earlier regression fixtures were adapted to supply explicit ADMIN test credentia
 
 No dependency changes: existing Pydantic/FastAPI and Python standard library implement the feature; focused HTTP tests use the already installed HTTPX dependency. No cloud authentication, Cognito, OAuth/social login, frontend login UI, payment/refund execution, or unrelated infrastructure was added. The local provider has no expiry, persistent user directory, MFA, automatic token issuance/rotation, per-reviewer assignment, or rate limiting. A bearer proves possession of a configured local credential, not independently verified real-world identity. Protect tokens at the host; transport/storage encryption was not added. This is not a production authentication deployment.
 
-SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. A full application restart cannot continue a conversation until the authoritative case exists again, and cannot resume old HITL checkpoints. No cross-store transactions or automatic replay were added. No frontend memory UI or storage encryption exists. Stored text remains untrusted. **Phase 14 was NOT started.**
+SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. A full application restart cannot continue a conversation until the authoritative case exists again, and cannot resume old HITL checkpoints. No cross-store transactions or automatic replay were added. No frontend memory UI or storage encryption exists. Stored text remains untrusted. Phase 14 was not part of this historical implementation; see the [current guardrails guide](phase-14-guardrails.md).

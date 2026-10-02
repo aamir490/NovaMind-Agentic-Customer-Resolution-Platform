@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 from .service import CaseService, NotFoundError
 from .security import Authorization, Role, SecurityError, current_identity
+from .guardrails import GuardrailError, check_payload
 
 
 class MemoryContract(BaseModel):
@@ -283,6 +284,8 @@ class ConversationService:
             if len(encode(candidate)) > self.limits.max_chars:
                 break
             selected = candidate
+        # Only selected memory is sent to the model; check before adding this turn.
+        check_payload(selected)
         self.append(conversation_id, case_id, message)
         return conversation_id, encode(selected)
 
@@ -294,7 +297,7 @@ def begin_memory(memory, conversation_id, case_id, text):
         return None, None
     try:
         return memory.begin(conversation_id, case_id, text)
-    except SecurityError:
+    except (SecurityError, GuardrailError):
         raise
     except ConversationError:
         raise

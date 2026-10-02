@@ -4,9 +4,11 @@ from typing import Annotated, Generic, Literal, Protocol, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
+from .guardrails import GuardrailError, MAX_PROMPT_CHARS, validate_response_json
+
 
 class LLMModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, revalidate_instances="always")
 
 
 Nonblank = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -27,7 +29,7 @@ class LLMResponse(LLMModel):
     finish_reason: Literal["stop", "length", "refusal"]
 
 
-FailureCode = Literal["TIMEOUT", "UNAVAILABLE", "REFUSED", "INCOMPLETE", "INVALID_RESPONSE"]
+FailureCode = Literal["TIMEOUT", "UNAVAILABLE", "REFUSED", "INCOMPLETE", "INVALID_RESPONSE", "INPUT_LIMIT"]
 
 
 class LLMFailure(LLMModel):
@@ -67,6 +69,8 @@ class StructuredLLM:
     def generate(self, request: LLMRequest, output_model: type[Output]) -> LLMSuccess[Output] | LLMFailure:
         # Invalid caller input is a programming error, distinct from generation failure.
         request = LLMRequest.model_validate(request)
+        if sum(len(message.content) for message in request.messages) > MAX_PROMPT_CHARS:
+            return LLMFailure(code="INPUT_LIMIT", message="Model context exceeds the local safety limit")
         schema = output_model.model_json_schema()
         try:
             raw = self._provider.generate(request, response_schema=schema)
@@ -81,8 +85,9 @@ class StructuredLLM:
         if response.finish_reason == "length":
             return LLMFailure(code="INCOMPLETE", message="Provider output was truncated")
         try:
+            validate_response_json(response.text)
             data = output_model.model_validate_json(response.text, strict=True)
-        except ValidationError:
+        except (ValidationError, GuardrailError):
             return LLMFailure(code="INVALID_RESPONSE", message="Output does not match the requested JSON model")
         return LLMSuccess[output_model](data=data)
 

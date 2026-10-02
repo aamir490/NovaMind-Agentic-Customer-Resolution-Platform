@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 13 — Authentication & Authorization (local implementation and 27 focused tests passed; broader verification pending)
+**Current Phase:** 🔄 Phase 14 — Guardrails & AI Safety Controls (local implementation; 22/22 focused tests passed; broader verification not run)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 14 — Guardrails & AI Safety Controls, pending explicit approval; NOT started. Bedrock remains deferred. Phase 13 builds on the verified and pushed Phase 12 baseline; no new full-regression or commit/push completion is claimed.
+**Next:** Phase 15 — AI Evaluation & Testing, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 14 preserves the Phase 1–13 architecture and security boundaries; no new full-regression or commit/push completion is claimed. See [Phase 14 safeguards and limitations](phase-14-guardrails.md).
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -108,7 +108,7 @@ Interview Mastery
 | 11 | Knowledge Base & RAG | ✅ Complete; independent verification passed |
 | 12 | Conversation Memory & Persistence | ✅ Complete; independent verification passed |
 | 13 | Authentication & Authorization | 🔄 Local implementation; 27 focused tests passed |
-| 14 | Guardrails & AI Safety Controls | ⏳ |
+| 14 | Guardrails & AI Safety Controls | 🔄 Local implementation; 22 focused tests passed |
 | 15 | AI Evaluation & Testing | ⏳ |
 | 16 | Observability & Auditability | ⏳ |
 | 17 | Containerization | ⏳ |
@@ -702,17 +702,19 @@ SQLite persists conversation memory only. Business/domain records, LangGraph/HIT
 - Request-scoped identity outside prompts, conversation memory, RAG, and checkpoint authority; audit actor IDs are evidence only.
 - In-process ASGI, scripted-model, and temporary-database tests for role/ownership isolation, spoofing, prompt/memory/RAG attacks, and retained HITL safety.
 
-No dependencies, cloud authentication, OAuth/social login, frontend login UI, or action execution were added. The existing frontend cannot access protected records without bearer credentials. Static local tokens have no expiry or automated lifecycle; this is not production authentication. Conversation-only SQLite persistence and the in-memory domain/checkpoint/audit limits remain. Phase 14 has NOT started and requires approval.
+No dependencies, cloud authentication, OAuth/social login, frontend login UI, or action execution were added. The existing frontend cannot access protected records without bearer credentials. Static local tokens have no expiry or automated lifecycle; this is not production authentication. Conversation-only SQLite persistence and the in-memory domain/checkpoint/audit limits remain. Phase 14 adds the local safeguards below while retaining these boundaries.
 
 ---
 
 # 🛡️ AI SAFETY
 
-## Phase 14 — Guardrails & AI Safety Controls ⏳
+## Phase 14 — Guardrails & AI Safety Controls 🔄
+
+**Status:** Local implementation and **22/22 focused tests passed**. `git diff --check` passed with CRLF/LF normalization warnings only. No full regression, frontend build, live network/Gemini/AWS calls, or commit/push is claimed.
 
 **Goal:** Reduce unsafe, invalid, or unauthorized AI behavior.
 
-### Planned Controls
+### Implemented Controls
 
 - Input validation
 - Output validation
@@ -723,6 +725,8 @@ No dependencies, cloud authentication, OAuth/social login, frontend login UI, or
 - Policy enforcement
 - Model failure handling
 - Unexpected tool-call handling
+
+Local checks now screen agent input, selected memory, tool arguments, and tool results for explicit injection patterns; bound payloads and model context; and reject ambiguous/invalid model JSON and invalid tool output. Existing authentication, ownership, deterministic policy, tool allowlists, case/proposal/step limits, authenticated HITL, and no-execution boundaries remain authoritative. HITL reuses the guarded graph nodes. No new dependency or live provider/service call is required. See [Phase 14 implementation, focused verification, failure codes, and limitations](phase-14-guardrails.md). Broader regression, production safety, and commit/push completion are not claimed. **Phase 15 is NOT started.**
 
 ### Core Principle
 
@@ -1340,8 +1344,8 @@ Phase 12  ✅ Complete; independent verification passed
 SECURITY & AI QUALITY
 ────────────────────────────────
 Phase 13  🔄 Local implementation; 27 focused tests passed; broader verification pending
-Phase 14  ⏳ NEXT — awaiting approval; NOT started
-Phase 15  ⏳
+Phase 14  🔄 Local guardrails implementation; 22 focused tests passed
+Phase 15  ⏳ NOT started; outside authorized scope
 Phase 16  ⏳
 
 CLOUD & PRODUCTION

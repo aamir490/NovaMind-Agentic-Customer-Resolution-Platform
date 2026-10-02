@@ -1,4 +1,4 @@
-Current status: **Phase 13 local authentication/authorization implemented; 27/27 focused tests passed**, built on the verified and pushed Phase 12 baseline. No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. See [Phase 13 verification and limitations](phase-13-security.md). Phase 12's **169/169** backend and **6/6** frontend API results remain historical baseline evidence. **Phase 14 is next, pending approval; NOT started.**
+Current status: **Phase 14 local guardrails implemented; 22/22 focused tests passed**, preserving the Phase 1–13 architecture and security boundaries. See [Phase 14 checks, verification, and limitations](phase-14-guardrails.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Phase 13's 27/27 focused tests and Phase 12's 169/169 backend and 6/6 frontend API results remain historical evidence. **Phase 15 is NOT started.**
 
 Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions and authenticated reviewer IDs; credentials default to an empty registry. SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, frontend login UI, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
@@ -21,7 +21,7 @@ Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions 
 | **11** | Knowledge Base & RAG — COMPLETE | Independent verification passed; [results and limitations](phase-11-knowledge.md) |
 | **12** | Conversation Memory & Persistence — COMPLETE | Independent verification passed; durable conversation memory only; [results and limitations](phase-12-conversations.md) |
 | **13** | Authentication & Authorization — IMPLEMENTED | Local provider, roles, ownership checks, authenticated reviews; [27 focused tests and limitations](phase-13-security.md) |
-| **14** | Guardrails & AI Safety Controls | Input/output/tool/action safeguards |
+| **14** | Guardrails & AI Safety Controls — IMPLEMENTED LOCALLY | Input/output bounds, injection checks, retained tool/action restrictions; [focused verification and limits](phase-14-guardrails.md) |
 | **15** | AI Evaluation & Testing | Quality, tool-use, RAG and workflow evaluations |
 | **16** | Observability & Auditability | Logs, traces, metrics and audit trail |
 | **17** | Containerization | Production Docker setup |

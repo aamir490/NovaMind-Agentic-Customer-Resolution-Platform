@@ -13,6 +13,7 @@ from .schemas import RequestModel
 from .service import CaseService, ConflictError, NotFoundError
 from .knowledge import KnowledgeError, KnowledgeQuery, KnowledgeRetriever, LocalKnowledgeRetriever, RetrievalResult, retrieve_safely
 from .security import Authorization, SecurityError, current_identity
+from .guardrails import GuardrailError, check_payload
 
 
 class CustomerLookup(RequestModel):
@@ -50,7 +51,7 @@ class ToolSuccess(Record):
 
 
 class ToolError(Record):
-    code: Literal["UNKNOWN_TOOL", "INVALID_INPUT", "NOT_FOUND", "CONFLICT", "KNOWLEDGE_UNAVAILABLE", "UNAUTHENTICATED", "FORBIDDEN"]
+    code: Literal["UNKNOWN_TOOL", "INVALID_INPUT", "NOT_FOUND", "CONFLICT", "KNOWLEDGE_UNAVAILABLE", "UNAUTHENTICATED", "FORBIDDEN", "UNSAFE_CONTENT", "PAYLOAD_LIMIT", "INVALID_OUTPUT"]
     message: str
     issues: tuple[str, ...] = ()
 
@@ -140,18 +141,24 @@ class LocalTools:
         if binding is None:
             return ToolFailure(tool=name, error=ToolError(code="UNKNOWN_TOOL", message="Tool is not available"))
         try:
+            check_payload(arguments, scan=False)
             request = binding.input_model.model_validate(arguments)
+        except GuardrailError as error:
+            return ToolFailure(tool=name, error=ToolError(code=error.code, message="Tool input rejected by safety checks"))
         except ValidationError as error:
             issues = tuple(
-                f"{'.'.join(map(str, item['loc'])) or 'input'}: {item['msg']}"
+                item['type']
                 for item in error.errors(include_input=False, include_context=False, include_url=False)
-            )
+            )[:8]
             return ToolFailure(tool=name, error=ToolError(
                 code="INVALID_INPUT", message="Tool input validation failed", issues=issues,
             ))
         try:
             self._authorization.tool(name, request)
+            check_payload(request.model_dump(mode="json"))
             value = binding.handler(request)
+        except GuardrailError as error:
+            return ToolFailure(tool=name, error=ToolError(code=error.code, message="Tool input rejected by safety checks"))
         except SecurityError as error:
             return ToolFailure(tool=name, error=ToolError(code=error.code, message=error.detail))
         except NotFoundError as error:
@@ -160,6 +167,12 @@ class LocalTools:
             return ToolFailure(tool=name, error=ToolError(code="CONFLICT", message=str(error)))
         except KnowledgeError:
             return ToolFailure(tool=name, error=ToolError(code="KNOWLEDGE_UNAVAILABLE", message="Knowledge retrieval is unavailable"))
-        # Unexpected service errors/output contract violations must surface as defects.
-        data = binding.output_model.model_validate(value)
+        # Revalidate even preconstructed model instances from replacement adapters.
+        try:
+            data = binding.output_model.model_validate(value.model_dump() if isinstance(value, BaseModel) else value)
+            check_payload(data.model_dump(mode="json"))
+        except ValidationError:
+            return ToolFailure(tool=name, error=ToolError(code="INVALID_OUTPUT", message="Tool output validation failed"))
+        except GuardrailError as error:
+            return ToolFailure(tool=name, error=ToolError(code=error.code, message="Tool output rejected by safety checks"))
         return ToolSuccess(tool=name, data=data)

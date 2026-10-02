@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 13 — Local authentication and authorization implemented
+## Current stage: V2 Phase 14 — Local guardrails implemented
 
-Phase 13 implementation and **27 focused tests passed**, built on the verified and pushed Phase 12 baseline. Broader regression and independent acceptance are not claimed for these changes. Phase 14 has NOT started and requires approval. See [Phase 13 identity, permissions, setup, and limitations](docs/phase-13-security.md).
+Phase 14 adds local input/output bounds, prompt-injection checks, and tool-result validation while preserving the Phase 1–13 architecture and security boundaries. Verification is limited to focused local tests; broader regression and independent acceptance are not claimed. Phase 15 has NOT started. See [Phase 14 controls, verification, and limitations](docs/phase-14-guardrails.md) and [Phase 13 authentication configuration](docs/phase-13-security.md).
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -50,6 +50,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- Local AI boundary checks for customer input, selected conversation memory, tool arguments/results, and model JSON. Existing allowlists, deterministic policies, authenticated ownership/HITL, and no-execution rules remain authoritative. No new dependencies. See [Phase 14 safeguards and heuristic limitations](docs/phase-14-guardrails.md).
 - Local replaceable bearer authentication with CUSTOMER, REVIEWER, and ADMIN roles; server-side ownership checks on routes, tools, and conversation access; authenticated human-review identity; request-scoped context separate from model/memory/checkpoint data. Business endpoints default to 401 until the host configures credentials. No frontend login UI was added. See [Phase 13 configuration](docs/phase-13-security.md).
 - Local SQLite conversation persistence through a replaceable store, case-bound UUIDs, ordered UTC-stamped user/assistant messages, and bounded untrusted context for Phase 8/9/10 agents. Business state, HITL checkpoints, and audit history remain separate and in memory. See [Phase 12 details](docs/phase-12-conversations.md).
 - Read-only local knowledge retrieval over three curated support documents. The `search_knowledge` tool returns bounded chunks and citation metadata marked as untrusted reference information; deterministic rules and HITL remain authoritative. See [Phase 11 contracts and limits](docs/phase-11-knowledge.md).
@@ -82,6 +83,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 14: **22/22 focused local tests passed**; `git diff --check` passed with CRLF/LF normalization warnings only. See the [guardrails guide](docs/phase-14-guardrails.md). Only the Phase 14 suite is run; no live model/network/AWS call or full regression. The results below remain historical evidence.
 - Phase 13: **27/27 focused security tests passed** using local credentials, in-process ASGI transport, scripted models, and isolated SQLite files. No full regression, frontend build, live model/network/AWS calls, or package changes. Earlier fixtures were adapted for explicit authenticated access but those suites were not rerun. See [verification and limitations](docs/phase-13-security.md). Results below are historical phase evidence; Phase 13 supersedes earlier unauthenticated interface/reviewer limitations with local authentication only.
 - Phase 12 independent verification reported by the user: **25/25 focused conversation/persistence tests passed**, **169/169 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. SQLite persists conversation memory only; business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. No cross-store transactions, automatic replay, authentication, encryption, or frontend memory UI exists. Stored conversation text remains untrusted context, not authoritative business state. See [verification and limitations](docs/phase-12-conversations.md).
 - Phase 11 independent verification reported by the user: **15/15 focused Knowledge/RAG tests passed**, **144/144 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Retrieval remains local lexical/token-cosine only, with no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted; deterministic business rules and HITL remain authoritative. Earlier results below are historical evidence.
