@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** ✅ Phase 12 — Conversation Memory & Persistence (complete following user-reported independent verification)
+**Current Phase:** 🔄 Phase 13 — Authentication & Authorization (local implementation and 27 focused tests passed; broader verification pending)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 13 — Authentication & Authorization, pending explicit approval; NOT started. Bedrock remains deferred. Phase 12 verification results are recorded below; no new commit/push completion is claimed.
+**Next:** Phase 14 — Guardrails & AI Safety Controls, pending explicit approval; NOT started. Bedrock remains deferred. Phase 13 builds on the verified and pushed Phase 12 baseline; no new full-regression or commit/push completion is claimed.
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -107,7 +107,7 @@ Interview Mastery
 | 10 | Human-in-the-Loop Agent Workflow | ✅ Complete; independent verification passed |
 | 11 | Knowledge Base & RAG | ✅ Complete; independent verification passed |
 | 12 | Conversation Memory & Persistence | ✅ Complete; independent verification passed |
-| 13 | Authentication & Authorization | ⏳ |
+| 13 | Authentication & Authorization | 🔄 Local implementation; 27 focused tests passed |
 | 14 | Guardrails & AI Safety Controls | ⏳ |
 | 15 | AI Evaluation & Testing | ⏳ |
 | 16 | Observability & Auditability | ⏳ |
@@ -681,30 +681,28 @@ Agent Workflow State
 Audit History
 ```
 
-SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions or automatic replay, and no authentication, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state. No dependencies or cloud infrastructure were added. Phase 13 is next, has NOT started, and requires approval.
+SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state. Phase 12 added no authentication; Phase 13's local authentication is described below. No dependencies or cloud infrastructure were added in either phase.
 
 ---
 
 # 🔐 IDENTITY & ACCESS
 
-## Phase 13 — Authentication & Authorization ⏳
+## Phase 13 — Authentication & Authorization 🔄
 
-**Goal:** Introduce real user identity and permission boundaries.
+**Status:** Local implementation and **27/27 focused security tests passed**. Full regression, frontend build, independent acceptance, and commit/push are not claimed. See [contracts, local configuration, permissions, verification, and limitations](phase-13-security.md).
 
-### Planned Concepts
+**Goal:** Introduce replaceable local authentication and server-side authorization without cloud identity infrastructure.
 
-- Authentication
-- Authorization
-- User identity
-- Customer permissions
-- Support-agent permissions
-- Reviewer permissions
-- Protected APIs
-- Role-based access controls
+### Implemented
 
-### Important Improvement
+- Validated authenticated identities and deterministic server-configured bearer credentials; empty/default registry denies access.
+- CUSTOMER ownership checks, REVIEWER human operations, and broader ADMIN operations subject to existing deterministic rules.
+- Authentication on business HTTP routes; protected tool, conversation, and HITL interfaces; safe 401/403 responses.
+- Server-derived reviewer UUIDs; caller-supplied reviewer names are rejected.
+- Request-scoped identity outside prompts, conversation memory, RAG, and checkpoint authority; audit actor IDs are evidence only.
+- In-process ASGI, scripted-model, and temporary-database tests for role/ownership isolation, spoofing, prompt/memory/RAG attacks, and retained HITL safety.
 
-Current unverified reviewer-name labels will eventually be replaced by authenticated reviewer identity.
+No dependencies, cloud authentication, OAuth/social login, frontend login UI, or action execution were added. The existing frontend cannot access protected records without bearer credentials. Static local tokens have no expiry or automated lifecycle; this is not production authentication. Conversation-only SQLite persistence and the in-memory domain/checkpoint/audit limits remain. Phase 14 has NOT started and requires approval.
 
 ---
 
@@ -1341,8 +1339,8 @@ Phase 12  ✅ Complete; independent verification passed
 
 SECURITY & AI QUALITY
 ────────────────────────────────
-Phase 13  ⏳ NEXT — awaiting approval; NOT started
-Phase 14  ⏳
+Phase 13  🔄 Local implementation; 27 focused tests passed; broader verification pending
+Phase 14  ⏳ NEXT — awaiting approval; NOT started
 Phase 15  ⏳
 Phase 16  ⏳
 

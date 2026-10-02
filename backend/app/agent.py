@@ -10,6 +10,7 @@ from .llm import LLMFailure, LLMMessage, LLMRequest, StructuredLLM
 from .tools import LocalTools, ToolFailure, ToolSuccess
 from .conversations import (ConversationService, ConversationError, MEMORY_INSTRUCTIONS,
                             begin_memory, finish_memory)
+from .security import SecurityError
 
 
 class Contract(BaseModel):
@@ -113,7 +114,7 @@ class ResolutionAgent:
         try:
             conversation_id, memory_context = begin_memory(
                 self._memory, request.conversation_id, request.case_id, request.message)
-        except ConversationError as failure:
+        except (ConversationError, SecurityError) as failure:
             history.append(AuditEntry(step=0, error=failure.code))
             return finish(0, failure.code)
 

@@ -1,6 +1,6 @@
 # Phase 10 — Human-in-the-loop proposal review
 
-**Phase 10 complete**, following independent verification reported by the user. Phase 11 is next, pending approval; it has NOT started.
+**Phase 10 complete**, following independent verification reported by the user. This document records its historical contracts and verification. Phase 13 now requires an authenticated scope for HITL, restricts resume/audit to REVIEWER or ADMIN, removes `reviewer_name` from `HumanDecision`, and derives reviewer identity from context. See [current authenticated usage and limits](phase-13-security.md). The earlier examples and unauthenticated-identity descriptions below are historical; checkpoint, binding, transition, and no-execution boundaries remain intact. Phase 14 has NOT started.
 
 ## Architecture and checkpoint state
 

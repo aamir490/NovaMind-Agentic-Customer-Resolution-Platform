@@ -201,7 +201,7 @@ class KnowledgeTests(unittest.TestCase):
         ticket = paused.review
         result = workflow.resume({"workflow_id": ticket.workflow_id, "case_id": ticket.case_id,
             "proposal_id": ticket.proposal_id, "review_id": ticket.review_id,
-            "decision": "REJECT", "reviewer_name": "Actual local caller"})
+            "decision": "REJECT"})
         self.assertEqual(result.reviewed_status, "REJECTED")
         self.assertEqual(len(provider.requests), 2)
         self.assertEqual(self.cases.get_case(self.case.id), self.case)

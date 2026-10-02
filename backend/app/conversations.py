@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from .service import CaseService, NotFoundError
+from .security import Authorization, Role, SecurityError, current_identity
 
 
 class MemoryContract(BaseModel):
@@ -217,8 +218,10 @@ class ConversationService:
     def _case(self, case_id):
         try:
             case_id = UUID(str(case_id))
-            self._cases.get_case(case_id)
+            Authorization(self._cases).case(case_id)
             return case_id
+        except SecurityError:
+            raise
         except NotFoundError:
             raise ConversationError("CONVERSATION_CASE_NOT_FOUND") from None
         except Exception:
@@ -237,7 +240,14 @@ class ConversationService:
 
     def load(self, conversation_id, case_id):
         case_id = self._case(case_id)
-        history = ConversationHistory.model_validate(self._store.load(conversation_id, case_id))
+        try:
+            history = ConversationHistory.model_validate(self._store.load(conversation_id, case_id))
+        except ConversationError as error:
+            if current_identity().role == Role.CUSTOMER and error.code in (
+                "CONVERSATION_NOT_FOUND", "CONVERSATION_CASE_MISMATCH",
+            ):
+                raise SecurityError() from None
+            raise
         self._bound(history.conversation, case_id, conversation_id)
         return history
 
@@ -284,6 +294,8 @@ def begin_memory(memory, conversation_id, case_id, text):
         return None, None
     try:
         return memory.begin(conversation_id, case_id, text)
+    except SecurityError:
+        raise
     except ConversationError:
         raise
     except Exception:

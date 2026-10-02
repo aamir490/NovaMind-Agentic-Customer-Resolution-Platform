@@ -1,5 +1,7 @@
 # Phase 4: Resolution proposals and human review boundary
 
+**Historical contract note:** Phase 13 protects these HTTP endpoints with authentication and authorization. Review bodies now accept only `note`; the server derives the reviewer UUID from authenticated REVIEWER/ADMIN context and rejects caller-supplied `reviewer_name`. The older HTTP examples below record Phase 4 behavior. See [current calling contracts](phase-13-security.md). Domain transition and no-execution rules remain unchanged.
+
 Local, in-memory API workflow only. No frontend changes or action execution are included.
 
 ## Proposal and review contract

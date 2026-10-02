@@ -1,6 +1,8 @@
 # Phase 12 — Conversation Memory & Persistence
 
-**Phase 12 complete**, following independent verification reported by the user. Built on the independently verified Phase 11 baseline. Results are recorded below; no new commit/push completion is claimed. **Phase 13 is next, has NOT started, and requires user approval.**
+**Phase 12 complete**, following independent verification reported by the user. Built on the independently verified Phase 11 baseline. Its verification and implementation-time limits are recorded below. Phase 13 subsequently adds local authentication and authorization; see [the current authenticated calling contracts](phase-13-security.md). Phase 14 has NOT started.
+
+**Historical scope note:** This guide records Phase 12. Programmatic memory/agent/HITL examples now require the Phase 13 `authenticated(provider, token)` scope. Phase 13 replaces the unauthenticated reviewer limitation with a server-derived reviewer UUID and rejects supplied reviewer names. Storage, restart/recovery limits, untrusted-memory treatment, and the separate business/checkpoint/audit responsibilities remain unchanged.
 
 ## Four separate responsibilities
 
@@ -118,4 +120,4 @@ During implementation, only the focused Phase 12 tests ran; no live Gemini/netwo
 
 SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions or automatic replay, and no authentication, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
-This is local bounded demonstration storage: at most 10000 messages per conversation, 8000 characters per message, full-history validation on loads/appends, and unpaginated case listing. Concurrent turns may interleave their committed messages; a whole agent turn is not serialized or idempotent. There is no retention/deletion UI, automated backup, encryption, schema migration, shared/distributed deployment support, or domain/checkpoint/audit durability. No database package was added. No AWS, DynamoDB, RDS, MongoDB, Redis, vector database, authentication, or frontend memory UI was added. **Phase 13 was NOT started.**
+This is local bounded demonstration storage: at most 10000 messages per conversation, 8000 characters per message, full-history validation on loads/appends, and unpaginated case listing. Concurrent turns may interleave their committed messages; a whole agent turn is not serialized or idempotent. There is no retention/deletion UI, automated backup, encryption, schema migration, shared/distributed deployment support, or domain/checkpoint/audit durability. No database package was added. Phase 12 added no AWS, DynamoDB, RDS, MongoDB, Redis, vector database, authentication, or frontend memory UI. Phase 13's local authentication is documented separately; **Phase 14 has NOT started.**

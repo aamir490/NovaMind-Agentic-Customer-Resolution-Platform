@@ -1,6 +1,6 @@
 # Phase 11 — Local knowledge retrieval
 
-**Phase 11 complete**, following independent verification reported by the user. Phase 12 subsequently added local conversation persistence; see [its implementation, focused verification, and limitations](phase-12-conversations.md). Phase 13 has NOT started.
+**Phase 11 complete**, following independent verification reported by the user. Phase 12 subsequently added local conversation persistence; see [its verification and limitations](phase-12-conversations.md). Phase 13 now requires authenticated context for tool/agent access; see [the local security boundary](phase-13-security.md). Retrieval and its untrusted-evidence treatment are unchanged. Phase 14 has NOT started.
 
 ## Corpus and contracts
 

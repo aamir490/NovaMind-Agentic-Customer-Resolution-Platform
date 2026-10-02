@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 12 complete — Local conversation persistence
+## Current stage: V2 Phase 13 — Local authentication and authorization implemented
 
-Phase 12 is complete following independent verification reported by the user. Phase 13 is next, has NOT started, and requires approval. See [Phase 12 contracts, verification, restart behavior, and limitations](docs/phase-12-conversations.md).
+Phase 13 implementation and **27 focused tests passed**, built on the verified and pushed Phase 12 baseline. Broader regression and independent acceptance are not claimed for these changes. Phase 14 has NOT started and requires approval. See [Phase 13 identity, permissions, setup, and limitations](docs/phase-13-security.md).
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -50,6 +50,7 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 
 ## IMPLEMENTED NOW
 
+- Local replaceable bearer authentication with CUSTOMER, REVIEWER, and ADMIN roles; server-side ownership checks on routes, tools, and conversation access; authenticated human-review identity; request-scoped context separate from model/memory/checkpoint data. Business endpoints default to 401 until the host configures credentials. No frontend login UI was added. See [Phase 13 configuration](docs/phase-13-security.md).
 - Local SQLite conversation persistence through a replaceable store, case-bound UUIDs, ordered UTC-stamped user/assistant messages, and bounded untrusted context for Phase 8/9/10 agents. Business state, HITL checkpoints, and audit history remain separate and in memory. See [Phase 12 details](docs/phase-12-conversations.md).
 - Read-only local knowledge retrieval over three curated support documents. The `search_knowledge` tool returns bounded chunks and citation metadata marked as untrusted reference information; deterministic rules and HITL remain authoritative. See [Phase 11 contracts and limits](docs/phase-11-knowledge.md).
 - A local checkpointed HITL workflow pauses after pending proposal creation and resumes only through an explicit validated human decision. It reuses Phase 4 review, ends without another LLM call or action execution, and leaves Phases 8/9 available unchanged. See [Phase 10 contracts and limits](docs/phase-10-hitl.md).
@@ -63,10 +64,10 @@ Start with [local development](docs/local-development.md), [Phase 0 scope](docs/
 - In-memory customer, order, and support-case records, validated API models, and limited case-status transitions. See the [Phase 1 API walkthrough](docs/phase-1-domain.md).
 - Read-only local inventory/policy lookups and conditional return/refund eligibility checks with explicit denial reasons. See [Phase 2 operations and assumptions](docs/phase-2-business-operations.md).
 - A read-only case-review UI showing customer/order context, inventory, policy, assessment inputs, and backend eligibility/denial results. See [the Phase 3 walkthrough](docs/phase-3-case-review.md).
-- Local proposal creation and explicit, one-time approve/reject APIs. Server-managed IDs/status/timestamps; no action execution or verified reviewer identity. See [Phase 4 contracts and limits](docs/phase-4-proposals.md). The frontend remains the Phase 3 read-only UI.
+- Local proposal creation and explicit, one-time approve/reject APIs. Server-managed IDs/status/timestamps; Phase 13 derives reviewer identity from authenticated context. No action execution. See [Phase 13 review contracts](docs/phase-13-security.md) and [Phase 4 domain rules](docs/phase-4-proposals.md). The frontend remains the Phase 3 read-only UI without login or bearer credential plumbing.
 - The eight Phase 5 tools delegate lookups, eligibility assessment, pending proposal creation, and proposal status to existing services; Phase 11 adds read-only knowledge search as the ninth tool. Review and execution remain excluded. See [Phase 5 tool contracts](docs/phase-5-tools.md).
 
-Use Python 3.12 and Node.js 24. Phase 9 adds LangGraph; existing package versions remain pinned. Phase 12 uses standard-library SQLite for conversation text only. No Bedrock integration, authentication, or AWS deployment exists.
+Use Python 3.12 and Node.js 24. Phase 9 adds LangGraph; existing package versions remain pinned. Phase 12 uses standard-library SQLite for conversation text only. Phase 13 adds local authentication without new dependencies. No Bedrock integration, cloud authentication, or AWS deployment exists.
 
 ## PLANNED
 
@@ -81,6 +82,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 13: **27/27 focused security tests passed** using local credentials, in-process ASGI transport, scripted models, and isolated SQLite files. No full regression, frontend build, live model/network/AWS calls, or package changes. Earlier fixtures were adapted for explicit authenticated access but those suites were not rerun. See [verification and limitations](docs/phase-13-security.md). Results below are historical phase evidence; Phase 13 supersedes earlier unauthenticated interface/reviewer limitations with local authentication only.
 - Phase 12 independent verification reported by the user: **25/25 focused conversation/persistence tests passed**, **169/169 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. SQLite persists conversation memory only; business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. No cross-store transactions, automatic replay, authentication, encryption, or frontend memory UI exists. Stored conversation text remains untrusted context, not authoritative business state. See [verification and limitations](docs/phase-12-conversations.md).
 - Phase 11 independent verification reported by the user: **15/15 focused Knowledge/RAG tests passed**, **144/144 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Retrieval remains local lexical/token-cosine only, with no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted; deterministic business rules and HITL remain authoritative. Earlier results below are historical evidence.
 - Phase 10 independent verification reported by the user: **20/20 focused HITL tests passed**, **129/129 full backend regression tests passed**, **6/6 frontend API tests passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Live Gemini and browser verification are not established by these results.

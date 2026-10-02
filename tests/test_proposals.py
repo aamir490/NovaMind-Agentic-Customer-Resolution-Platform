@@ -17,6 +17,7 @@ from backend.app.main import create_app
 from backend.app.proposals import HumanReview, ProposalCreate, ProposalStatus
 from backend.app.schemas import CustomerCreate, OrderCreate, CaseCreate
 from backend.app.service import ConflictError, NotFoundError
+from security_fixtures import ADMIN_TOKEN, admin_provider
 
 
 def create_case(app):
@@ -124,7 +125,7 @@ class ProposalServiceTests(unittest.TestCase):
 class ProposalHttpTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.app = create_app()
+        cls.app = create_app(auth_provider=admin_provider())
         cls.case = create_case(cls.app)
         cls.listener = socket.socket()
         cls.listener.bind(("127.0.0.1", 0))
@@ -151,7 +152,7 @@ class ProposalHttpTests(unittest.TestCase):
     def request(self, method, path, body=None):
         request = Request(f"http://127.0.0.1:{self.port}{path}", method=method,
                           data=json.dumps(body).encode() if body is not None else None,
-                          headers={"Content-Type": "application/json"})
+                          headers={"Content-Type": "application/json", "Authorization": "Bearer " + ADMIN_TOKEN})
         try:
             response = self.client.open(request, timeout=5)
         except HTTPError as error:
@@ -174,7 +175,7 @@ class ProposalHttpTests(unittest.TestCase):
                 path = f'/api/proposals/{proposal["id"]}'
                 self.assertEqual(self.request("GET", path), (200, proposal))
                 self.assertIn(proposal, self.request("GET", f"/api/cases/{self.case.id}/proposals")[1])
-                body = {"reviewer_name": "Demo human", "note": "Reviewed manually."}
+                body = {"note": "Reviewed manually."}
                 status, reviewed = self.request("POST", f"{path}/{decision}", body)
                 self.assertEqual(status, 200)
                 self.assertEqual(reviewed["status"], "APPROVED" if decision == "approve" else "REJECTED")
@@ -194,7 +195,7 @@ class ProposalHttpTests(unittest.TestCase):
     def test_review_requires_explicit_human_fields_and_cannot_rewrite_proposal(self):
         proposal = self.create()
         path = f'/api/proposals/{proposal["id"]}'
-        base = {"reviewer_name": "Reviewer", "note": "Review."}
+        base = {"note": "Review."}
         for body in ({}, {**base, "reviewer_name": " "}, {**base, "note": " "},
                      {**base, "status": "APPROVED"}, {**base, "action": "replacement"},
                      {**base, "reviewed_at": "2026-01-01"}):
@@ -204,7 +205,7 @@ class ProposalHttpTests(unittest.TestCase):
         self.assertEqual(self.request("PATCH", path, {"status": "APPROVED"})[0], 405)
 
     def test_missing_records_and_invalid_ids(self):
-        body = {"reviewer_name": "Reviewer", "note": "Review."}
+        body = {"note": "Review."}
         self.assertEqual(self.request("GET", f"/api/proposals/{uuid4()}")[0], 404)
         self.assertEqual(self.request("GET", "/api/proposals/not-a-uuid")[0], 422)
         self.assertEqual(self.request("GET", f"/api/cases/{uuid4()}/proposals")[0], 404)

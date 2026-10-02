@@ -1,6 +1,6 @@
-Current status: **Phase 12 complete**, following user-reported independent verification: Phase 12 focused conversation/persistence tests **25/25 passed**, full backend regression **169/169 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. No new commit/push completion is claimed. See [Phase 12 verification and limitations](phase-12-conversations.md). **Phase 13 is next, pending approval; NOT started.**
+Current status: **Phase 13 local authentication/authorization implemented; 27/27 focused tests passed**, built on the verified and pushed Phase 12 baseline. No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. See [Phase 13 verification and limitations](phase-13-security.md). Phase 12's **169/169** backend and **6/6** frontend API results remain historical baseline evidence. **Phase 14 is next, pending approval; NOT started.**
 
-SQLite persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions or automatic replay, and no authentication, encryption, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
+Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions and authenticated reviewer IDs; credentials default to an empty registry. SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, frontend login UI, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
 | Phase | Name | Main Goal |
 |---|---|---|
@@ -20,7 +20,7 @@ SQLite persists conversation memory only. Business/domain records, LangGraph/HIT
 | **10** | Human-in-the-Loop Agent Workflow — COMPLETE | Independent verification passed; [results and limitations](phase-10-hitl.md) |
 | **11** | Knowledge Base & RAG — COMPLETE | Independent verification passed; [results and limitations](phase-11-knowledge.md) |
 | **12** | Conversation Memory & Persistence — COMPLETE | Independent verification passed; durable conversation memory only; [results and limitations](phase-12-conversations.md) |
-| **13** | Authentication & Authorization | Users, roles and protected operations |
+| **13** | Authentication & Authorization — IMPLEMENTED | Local provider, roles, ownership checks, authenticated reviews; [27 focused tests and limitations](phase-13-security.md) |
 | **14** | Guardrails & AI Safety Controls | Input/output/tool/action safeguards |
 | **15** | AI Evaluation & Testing | Quality, tool-use, RAG and workflow evaluations |
 | **16** | Observability & Auditability | Logs, traces, metrics and audit trail |

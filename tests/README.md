@@ -1,6 +1,8 @@
 # Software tests
 
-Phase 12 is complete following independent verification reported by the user: focused conversation/persistence tests **25/25 passed**, full backend regression **169/169 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. These results were recorded without rerunning tests or builds during this documentation-only update. Phase 13 is next and has NOT started.
+Phase 13 focused verification: `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_security.py -v` — **27/27 passed**. Tests use deterministic local authentication, in-process ASGI transport without network, scripted LLMs, and temporary SQLite files. Earlier regression fixtures now provide explicit ADMIN credentials and use authenticated reviewer IDs; those suites were not rerun. No full regression, frontend tests/build, or live services ran for Phase 13. See [coverage and limitations](../docs/phase-13-security.md). Phase 14 has NOT started; verification below is historical evidence.
+
+Phase 12 is complete following independent verification reported by the user: focused conversation/persistence tests **25/25 passed**, full backend regression **169/169 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Those results were recorded during the Phase 12 documentation-only update and remain the baseline for Phase 13.
 
 The focused command is `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_conversations.py -v`. This suite uses temporary isolated SQLite files and scripted LLM providers; it covers durable conversation memory and its Phase 8/9/10/11 safety boundaries. See [verification and preserved limitations](../docs/phase-12-conversations.md). Counts below are historical phase evidence.
 

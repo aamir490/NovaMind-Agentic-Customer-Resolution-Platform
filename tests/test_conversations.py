@@ -26,6 +26,7 @@ from backend.app.llm import StructuredLLM
 from backend.app.schemas import CaseCreate
 from backend.app.service import CaseService
 from backend.app.tools import LocalTools
+from security_fixtures import ADMIN_ID
 
 
 class ConversationTests(unittest.TestCase):
@@ -271,7 +272,7 @@ class ConversationTests(unittest.TestCase):
     def decision(paused):
         review = paused.review
         return dict(workflow_id=review.workflow_id, case_id=review.case_id, proposal_id=review.proposal_id,
-                    review_id=review.review_id, decision="REJECT", reviewer_name="Actual reviewer")
+                    review_id=review.review_id, decision="REJECT")
 
     def test_rag_hitl_pause_resume_preserves_separate_memory_audit_and_human_identity(self):
         self.enterContext(patch.dict(os.environ, {"LANGGRAPH_STRICT_MSGPACK": "true"}))
@@ -292,7 +293,7 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(completed.reviewed_status, "REJECTED")
         self.assertEqual(len(provider.requests), 2)
         self.assertEqual(workflow.audit(paused.workflow_id)[:len(audit)], audit)
-        self.assertEqual(self.proposals.get(proposal.id).reviewer_name, "Actual reviewer")
+        self.assertEqual(self.proposals.get(proposal.id).reviewer_name, str(ADMIN_ID))
         messages = self.memory.load(self.cid, self.case.id).messages
         self.assertEqual([m.role for m in messages], ["assistant", "user", "assistant", "assistant"])
         self.assertEqual(messages[-1].content, completed.message)

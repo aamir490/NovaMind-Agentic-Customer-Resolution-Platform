@@ -13,6 +13,7 @@ from .llm import LLMMessage, LLMRequest, StructuredLLM
 from .tools import LocalTools
 from .conversations import (ConversationService, ConversationError, MEMORY_INSTRUCTIONS,
                             begin_memory, finish_memory)
+from .security import SecurityError
 
 
 class GraphState(Contract):
@@ -109,7 +110,7 @@ class GraphResolutionAgent:
         try:
             conversation_id, memory_context = begin_memory(
                 self._memory, state.request.conversation_id, state.request.case_id, state.request.message)
-        except ConversationError as failure:
+        except (ConversationError, SecurityError) as failure:
             return self._update(state, "load_case", history=(event,), error=failure.code,
                                 staged_event=AuditEntry(step=0, error=failure.code))
         request = AgentRequest(**{**state.request.model_dump(), "conversation_id": conversation_id})

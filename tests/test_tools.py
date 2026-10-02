@@ -9,10 +9,12 @@ from backend.app.main import create_app
 from backend.app.proposals import HumanReview, ProposalStatus
 from backend.app.schemas import CustomerCreate, OrderCreate, CaseCreate
 from backend.app.tools import LocalTools
+from security_fixtures import admin_scope
 
 
 class LocalToolTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(admin_scope())
         self.app = create_app()
         self.cases = self.app.state.case_service
         self.operations = self.app.state.business_operations

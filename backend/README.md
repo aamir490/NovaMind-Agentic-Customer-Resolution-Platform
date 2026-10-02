@@ -10,7 +10,9 @@ Phase 2 adds `operations.py` (immutable local fixtures, pure rules, and read-onl
 
 Current modules under `app/` separate HTTP routes, domain rules/services, controlled tools/agents, and conversation persistence. `create_app()` still creates independent in-memory business stores; restart/reload discards business data and HITL checkpoints. Use one worker for this local baseline.
 
-Phase 12 adds optional standard-library SQLite conversation storage through `ConversationService` and the agents' `memory=` parameter. Provision/open a local database explicitly; HTTP startup does not create one. Conversation text survives reopening, but missing cases/checkpoints are never restored from text. See [Phase 12 configuration, contracts, and limitations](../docs/phase-12-conversations.md). No new dependency was added; Phase 13 has not started.
+Phase 12 adds optional standard-library SQLite conversation storage through `ConversationService` and the agents' `memory=` parameter. Provision/open a local database explicitly; HTTP startup does not create one. Conversation text survives reopening, but missing cases/checkpoints are never restored from text. See [Phase 12 configuration, contracts, and limitations](../docs/phase-12-conversations.md).
+
+Phase 13 adds local authentication and authorization. Configure `create_app(auth_provider=...)` with an explicit server-side credential registry; the default is empty and denies business API access. Clients send a bearer header. Tools, conversation services, and HITL callers use `authenticated(provider, token)`; models cannot supply this context. REVIEWER/ADMIN review inputs omit `reviewer_name`, which the server derives from the authenticated user UUID. See [Phase 13 roles, setup, endpoint protection, and limits](../docs/phase-13-security.md). The frontend has no login/credential UI, so its protected business calls receive 401. Health remains public. No new dependency was added; Phase 14 has NOT started.
 
 Keep business rules independent of FastAPI and Strands. Keep authorization outside model decisions. Review V1 components individually before reuse.
 

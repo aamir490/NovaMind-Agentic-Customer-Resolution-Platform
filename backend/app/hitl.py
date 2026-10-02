@@ -12,13 +12,14 @@ from langsmith import tracing_context
 from pydantic import ConfigDict, ValidationError
 
 from .agent import AgentConfig, AgentRequest, AgentResult, AuditEntry, Contract
-from .domain import Description, Name
+from .domain import Description
 from .graph_agent import GraphResolutionAgent, GraphState
 from .llm import StructuredLLM
 from .proposals import HumanReview, ProposalService, ProposalStatus, ProposedAction
 from .service import ConflictError, NotFoundError
 from .tools import LocalTools
 from .conversations import ConversationService, ConversationError, finish_memory
+from .security import Role, current_identity, require_roles
 
 
 class ReviewRequired(Contract):
@@ -39,7 +40,6 @@ class HumanDecision(Contract):
     proposal_id: UUID
     review_id: UUID
     decision: Literal["APPROVE", "REJECT"]
-    reviewer_name: Name
     note: Description | None = None
 
 
@@ -50,6 +50,7 @@ class WorkflowEvent(Contract):
     agent_event: AuditEntry | None = None
     proposal_id: UUID | None = None
     human_decision: HumanDecision | None = None
+    reviewer_user_id: UUID | None = None
     proposal_status: ProposalStatus | None = None
     error: str | None = None
 
@@ -174,6 +175,7 @@ class HITLWorkflow:
         # This node restarts on resume. Everything before interrupt is read-only;
         # proposal creation and pause audit recording are in earlier checkpointed nodes.
         payload = interrupt(state.review.model_dump(mode="json"))
+        identity = require_roles(Role.REVIEWER, Role.ADMIN)
         try:
             decision = HumanDecision.model_validate(payload)
         except ValidationError:
@@ -186,13 +188,13 @@ class HITLWorkflow:
                 return self._failure(state, "REVIEW_MISMATCH")
             status = ProposalStatus.APPROVED if decision.decision == "APPROVE" else ProposalStatus.REJECTED
             reviewed = self._proposals.review(proposal.id, status, HumanReview(
-                reviewer_name=decision.reviewer_name, note=decision.note or "No note supplied.",
+                reviewer_name=str(identity.user_id), note=decision.note or "No note supplied.",
             ))
         except (NotFoundError, ConflictError):
             return self._failure(state, "REVIEW_CONFLICT")
         return self._update(state, reviewed_status=reviewed.status, audit=(*state.audit,
             self._event(state, "HUMAN_REVIEW", proposal_id=reviewed.id,
-                        human_decision=decision, proposal_status=reviewed.status)))
+                        human_decision=decision, reviewer_user_id=identity.user_id, proposal_status=reviewed.status)))
 
     def _runtime_config(self, workflow_id: UUID) -> dict:
         return {"configurable": {"thread_id": str(workflow_id)},
@@ -243,6 +245,7 @@ class HITLWorkflow:
         return result
 
     def start(self, request: AgentRequest) -> WorkflowResult:
+        current_identity()
         request = AgentRequest.model_validate(request)
         with self._lock:
             workflow_id = uuid4()
@@ -251,6 +254,7 @@ class HITLWorkflow:
                                           "agent": GraphState(request=request).model_dump(mode="json")})
 
     def resume(self, payload: HumanDecision | dict) -> WorkflowResult | ResumeRejected:
+        require_roles(Role.REVIEWER, Role.ADMIN)
         try:
             decision = HumanDecision.model_validate(payload)
         except ValidationError:
@@ -279,6 +283,7 @@ class HITLWorkflow:
 
     def audit(self, workflow_id: UUID) -> tuple[WorkflowEvent, ...]:
         """Local diagnostic history, separate from the minimal reviewer payload."""
+        require_roles(Role.REVIEWER, Role.ADMIN)
         with self._lock, tracing_context(enabled=False):
             if workflow_id not in self._runs:
                 raise KeyError("Unknown workflow")

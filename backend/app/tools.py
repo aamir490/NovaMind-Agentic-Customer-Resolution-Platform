@@ -12,6 +12,7 @@ from .proposals import ProposalCreate, ProposalService, ResolutionProposal
 from .schemas import RequestModel
 from .service import CaseService, ConflictError, NotFoundError
 from .knowledge import KnowledgeError, KnowledgeQuery, KnowledgeRetriever, LocalKnowledgeRetriever, RetrievalResult, retrieve_safely
+from .security import Authorization, SecurityError, current_identity
 
 
 class CustomerLookup(RequestModel):
@@ -49,7 +50,7 @@ class ToolSuccess(Record):
 
 
 class ToolError(Record):
-    code: Literal["UNKNOWN_TOOL", "INVALID_INPUT", "NOT_FOUND", "CONFLICT", "KNOWLEDGE_UNAVAILABLE"]
+    code: Literal["UNKNOWN_TOOL", "INVALID_INPUT", "NOT_FOUND", "CONFLICT", "KNOWLEDGE_UNAVAILABLE", "UNAUTHENTICATED", "FORBIDDEN"]
     message: str
     issues: tuple[str, ...] = ()
 
@@ -85,6 +86,7 @@ class LocalTools:
 
     def __init__(self, cases: CaseService, operations: BusinessOperations,
                  proposals: ProposalService, knowledge: KnowledgeRetriever | None = None) -> None:
+        self._authorization = Authorization(cases, proposals)
         retriever = knowledge if knowledge is not None else LocalKnowledgeRetriever()
         self._bindings = {
             "search_knowledge": _Binding(
@@ -130,6 +132,10 @@ class LocalTools:
         ) for name, binding in self._bindings.items()]
 
     def invoke(self, name: str, arguments: dict[str, object]) -> ToolSuccess | ToolFailure:
+        try:
+            current_identity()
+        except SecurityError as error:
+            return ToolFailure(tool=name, error=ToolError(code=error.code, message=error.detail))
         binding = self._bindings.get(name)
         if binding is None:
             return ToolFailure(tool=name, error=ToolError(code="UNKNOWN_TOOL", message="Tool is not available"))
@@ -144,7 +150,10 @@ class LocalTools:
                 code="INVALID_INPUT", message="Tool input validation failed", issues=issues,
             ))
         try:
+            self._authorization.tool(name, request)
             value = binding.handler(request)
+        except SecurityError as error:
+            return ToolFailure(tool=name, error=ToolError(code=error.code, message=error.detail))
         except NotFoundError as error:
             return ToolFailure(tool=name, error=ToolError(code="NOT_FOUND", message=str(error)))
         except ConflictError as error:

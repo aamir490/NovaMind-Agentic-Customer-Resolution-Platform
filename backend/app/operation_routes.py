@@ -6,6 +6,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from .domain import Name
+from .routes import Service
+from .security import Authorization, current_identity
 from .operations import (
     BusinessOperations, EligibilityInput, EligibilityResult, InventoryItem,
     ItemCondition, ReturnPolicy, ReturnReason,
@@ -23,11 +25,13 @@ Operations = Annotated[BusinessOperations, Depends(get_operations)]
 
 @router.get("/inventory/{sku}", response_model=InventoryItem)
 def get_inventory(sku: str, operations: Operations) -> InventoryItem:
+    current_identity()
     return operations.get_inventory(sku)
 
 
 @router.get("/policies/{policy_id}", response_model=ReturnPolicy)
 def get_policy(policy_id: str, operations: Operations) -> ReturnPolicy:
+    current_identity()
     return operations.get_policy(policy_id)
 
 
@@ -40,8 +44,11 @@ def check_eligibility(
     reason: ReturnReason,
     condition: ItemCondition,
     operations: Operations,
+    service: Service,
     quantity: Annotated[int, Query(ge=1, le=1000)] = 1,
 ) -> EligibilityResult:
+    Authorization(service).order(order_id)
+    Authorization.customer(customer_id)
     return operations.check_eligibility(order_id, EligibilityInput(
         customer_id=customer_id, sku=sku, quantity=quantity,
         days_since_delivery=days_since_delivery, reason=reason, condition=condition,

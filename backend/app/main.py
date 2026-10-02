@@ -13,6 +13,7 @@ from .proposal_routes import router as proposal_router
 from .proposals import ProposalService
 from .service import CaseService, ConflictError, NotFoundError
 from .tools import LocalTools
+from .security import AuthenticationProvider, LocalAuthenticationProvider, SecurityError, authenticated
 
 
 class HealthResponse(BaseModel):
@@ -25,11 +26,11 @@ def health() -> HealthResponse:
     return HealthResponse()
 
 
-def create_app() -> FastAPI:
+def create_app(*, auth_provider: AuthenticationProvider | None = None) -> FastAPI:
     app = FastAPI(
         title="NovaMind API",
-        description="Phase 4 local proposals and human review records. No authentication or action execution.",
-        version="0.4.0",
+        description="Local authenticated case/proposal operations. No action execution.",
+        version="0.13.0",
     )
     app.state.case_service = CaseService()
     app.state.business_operations = BusinessOperations(app.state.case_service)
@@ -37,6 +38,31 @@ def create_app() -> FastAPI:
     app.state.local_tools = LocalTools(
         app.state.case_service, app.state.business_operations, app.state.proposal_service,
     )
+    app.state.auth_provider = auth_provider if auth_provider is not None else LocalAuthenticationProvider()
+
+    @app.middleware("http")
+    async def authentication(request: Request, call_next):
+        if request.url.path.startswith("/api/") and request.url.path != "/api/health":
+            headers = request.headers.getlist("authorization")
+            if len(headers) != 1:
+                return security_response(SecurityError(401))
+            parts = headers[0].split(" ")
+            if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1]:
+                return security_response(SecurityError(401))
+            try:
+                with authenticated(app.state.auth_provider, parts[1]):
+                    return await call_next(request)
+            except SecurityError as error:
+                return security_response(error)
+        return await call_next(request)
+
+    def security_response(error: SecurityError):
+        return JSONResponse(status_code=error.status_code, content={"detail": error.detail},
+                            headers={"WWW-Authenticate": "Bearer"} if error.status_code == 401 else None)
+
+    @app.exception_handler(SecurityError)
+    async def security_error(request: Request, error: SecurityError):
+        return security_response(error)
     app.add_api_route("/api/health", health, response_model=HealthResponse, tags=["health"])
     app.include_router(router)
     app.include_router(operation_router)

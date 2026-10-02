@@ -11,6 +11,7 @@ from backend.app.agent import AgentConfig, AgentRequest, AgentResult, Resolution
 from backend.app.llm import LLMResponse, ProviderFailure, StructuredLLM
 from backend.app.main import create_app
 from backend.app.schemas import CaseCreate, CustomerCreate, OrderCreate
+from security_fixtures import admin_scope
 
 
 def call(name, **arguments):
@@ -37,6 +38,7 @@ class ScriptedProvider:
 
 class AgentTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(admin_scope())
         self.app = create_app()
         self.cases = self.app.state.case_service
         self.tools = self.app.state.local_tools

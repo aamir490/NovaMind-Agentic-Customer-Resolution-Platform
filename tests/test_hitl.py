@@ -11,6 +11,7 @@ from backend.app.agent import AgentConfig, AgentRequest
 from backend.app.hitl import HITLWorkflow, HumanDecision
 from backend.app.llm import StructuredLLM, ProviderFailure
 from backend.app.proposals import HumanReview, ProposalStatus
+from security_fixtures import ADMIN_ID, call_as_admin
 
 
 class HITLTests(unittest.TestCase):
@@ -28,7 +29,7 @@ class HITLTests(unittest.TestCase):
         review = self.paused.review
         return {"workflow_id": str(review.workflow_id), "case_id": str(review.case_id),
                 "proposal_id": str(review.proposal_id), "review_id": str(review.review_id),
-                "decision": "APPROVE", "reviewer_name": "Local human", **overrides}
+                "decision": "APPROVE", **overrides}
 
     def test_real_interrupt_and_minimal_payload(self):
         result = self.start()
@@ -51,7 +52,7 @@ class HITLTests(unittest.TestCase):
         self.assertEqual(result.status, "REVIEWED")
         self.assertEqual(result.reviewed_status, "APPROVED")
         proposal = self.proposals.get(self.paused.review.proposal_id)
-        self.assertEqual(proposal.reviewer_name, "Local human")
+        self.assertEqual(proposal.reviewer_name, str(ADMIN_ID))
         self.assertEqual(proposal.review_note, "Evidence checked")
         self.assertEqual(len(self.provider.requests), 1)
         self.assertFalse(result.actions_executed)
@@ -105,7 +106,8 @@ class HITLTests(unittest.TestCase):
     def test_concurrent_resumes_have_one_winner(self):
         self.start()
         with ThreadPoolExecutor(max_workers=2) as pool:
-            outcomes = list(pool.map(self.workflow.resume, [self.decision(), self.decision(decision="REJECT")]))
+            outcomes = list(pool.map(lambda decision: call_as_admin(self.workflow.resume, decision),
+                                     [self.decision(), self.decision(decision="REJECT")]))
         self.assertEqual(sum(getattr(r, "status", None) == "REVIEWED" for r in outcomes), 1)
         self.assertEqual(sum(getattr(r, "error", None) == "NOT_PAUSED" for r in outcomes), 1)
 
@@ -124,7 +126,7 @@ class HITLTests(unittest.TestCase):
         after = self.workflow.audit(self.paused.workflow_id)
         self.assertEqual(after[:-1], before)
         self.assertEqual(after[-1].kind, "HUMAN_REVIEW")
-        self.assertEqual(after[-1].human_decision.reviewer_name, "Local human")
+        self.assertEqual(after[-1].reviewer_user_id, ADMIN_ID)
         self.assertEqual([e.sequence for e in after], list(range(1, len(after) + 1)))
         self.assertEqual(len(self.proposals.list_for_case(self.case.id)), 1)
 

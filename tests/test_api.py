@@ -13,6 +13,7 @@ from uuid import uuid4
 import uvicorn
 
 from backend.app.main import create_app
+from security_fixtures import ADMIN_TOKEN, admin_provider
 
 
 class ApiTests(unittest.TestCase):
@@ -21,7 +22,7 @@ class ApiTests(unittest.TestCase):
         cls.listener = socket.socket()
         cls.listener.bind(("127.0.0.1", 0))
         cls.port = cls.listener.getsockname()[1]
-        cls.server = uvicorn.Server(uvicorn.Config(create_app(), log_level="error"))
+        cls.server = uvicorn.Server(uvicorn.Config(create_app(auth_provider=admin_provider()), log_level="error"))
         cls.thread = threading.Thread(
             target=cls.server.run, kwargs={"sockets": [cls.listener]}, daemon=True,
         )
@@ -46,7 +47,7 @@ class ApiTests(unittest.TestCase):
         request = Request(
             f"http://127.0.0.1:{self.port}{path}", method=method,
             data=json.dumps(body).encode() if body is not None else None,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "Authorization": "Bearer " + ADMIN_TOKEN},
         )
         try:
             response = self.client.open(request, timeout=5)
