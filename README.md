@@ -2,9 +2,9 @@
 
 A production-oriented multimodal customer resolution application, being built incrementally for **learning**, **interview and portfolio demonstrations**, and **verified deployment in a real AWS account**.
 
-## Current stage: V2 Phase 16 — Local observability implemented
+## Current stage: V2 Phase 17 — Container configuration implemented
 
-Phase 16 adds bounded local JSON logs, request/agent/tool/model traces, error/latency/usage metrics, and proposal/review audit metadata while preserving Phase 1–15 boundaries. **18/18 focused tests passed**; no dependency changes or live services. Broader regression is not claimed. Phase 17 has NOT started. See [Phase 16 setup, verification, and limitations](docs/phase-16-observability.md).
+Phase 17 adds backend/frontend Dockerfiles, a local Compose stack, health checks, optional mounted authentication configuration, and a loopback smoke checker. **14/14 focused tests, Compose validation, and offline frontend build passed.** Docker's Linux engine is unavailable, so image builds and running containers remain unverified. Phase 1–16 application code/dependencies are unchanged. Phase 18 has NOT started. See [Phase 17 setup, evidence, and limitations](docs/phase-17-containers.md).
 
 This is a new, independent repository. `Chatbot_text_image` is a V1 reference only; it has not been copied here. Reuse of any individual idea or component requires review in a later phase.
 
@@ -43,13 +43,14 @@ Sensitive actions must follow **PROPOSE -> AUTHORIZE -> EXECUTE -> VERIFY**. The
 - `infrastructure/`: future AWS planning; no provisioning code.
 - `docs/`: scope, architecture rationale, and learning notes.
 - `learning/`: plain-English learning material, starting with one overview chapter.
-- `scripts/`: guidance for future repeatable local utilities; no scripts yet.
+- `scripts/`: a read-only loopback container smoke checker and utility guidance.
 - `.github/workflows/`: future CI/CD scope notes; no executable workflows yet.
 
 Start with [local development](docs/local-development.md), [Phase 0 scope](docs/phase-0.md), [the current local baseline](docs/architecture/current-local-baseline.md), and [the learning overview](learning/00-Project-Overview.md).
 
 ## IMPLEMENTED NOW
 
+- Phase 17 packaging: non-root multistage images, a single backend worker, read-only Compose containers, same-origin Nginx `/api` routing, health checks, and narrow build contexts. Defaults retain empty-registry authentication. Container runtime verification is pending; see [container setup and limits](docs/phase-17-containers.md).
 - Local observability with server-generated trace IDs, bounded metadata-only event history, error/latency/model/token accounting, and authenticated review correlation. Diagnostics require REVIEWER/ADMIN; logging failures do not affect business operations. See [Phase 16 controls and limits](docs/phase-16-observability.md).
 - Deterministic local AI evaluation with explicit expected outcomes, per-check/category metrics, retrieval relevance/citation checks, loop/graph parity, HITL scenarios, and an offline-only scripted provider. See [Phase 15 evaluation](docs/phase-15-evaluations.md).
 - Local AI boundary checks for customer input, selected conversation memory, tool arguments/results, and model JSON. Existing allowlists, deterministic policies, authenticated ownership/HITL, and no-execution rules remain authoritative. No new dependencies. See [Phase 14 safeguards and heuristic limitations](docs/phase-14-guardrails.md).
@@ -85,6 +86,7 @@ These are target capabilities, not implemented services or production-verified c
 
 ## VERIFIED NOW
 
+- Phase 17: **14/14 focused tests passed**; both Compose configurations validate, and the frontend builds offline. `git diff --check` passed with line-ending warnings only. Docker engine unavailable: no image build or running-container verification is claimed. No full regression, dependency install, cloud call, image push, or deployment ran. See [recorded checks](docs/phase-17-containers.md).
 - Phase 16: **18/18 focused tests passed** using scripted providers, mocked SDK metadata, temporary local stores, and in-process HTTP. `git diff --check` passed with line-ending warnings only. No earlier suite, full regression, frontend build, or live service ran. See [verification and limits](docs/phase-16-observability.md).
 - Phase 15: **15/15 focused tests passed**, exercising **54/54 evaluation scenarios** and validating the grader, repeatability, and parity. No previous suite, frontend build, or live service ran. See [metrics and limits](docs/phase-15-evaluations.md). Earlier phase results below remain historical evidence.
 - Phase 14: **22/22 focused local tests passed**; `git diff --check` passed with CRLF/LF normalization warnings only. See the [guardrails guide](docs/phase-14-guardrails.md). Only the Phase 14 suite is run; no live model/network/AWS call or full regression. The results below remain historical evidence.

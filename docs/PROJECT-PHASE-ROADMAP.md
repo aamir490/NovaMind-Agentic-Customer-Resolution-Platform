@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** 🔄 Phase 16 — Observability & Auditability (local implementation; 18/18 focused tests passed; broader verification not run)
+**Current Phase:** 🔄 Phase 17 — Containerization (configuration implemented; 14/14 focused tests, Compose validation, and offline frontend build passed; Docker runtime unverified)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 17 — Containerization, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 16 adds local observability while retaining Phase 1–15 behavior/security boundaries; no new full-regression or commit/push completion is claimed. See [Phase 16 setup, verification, and limitations](phase-16-observability.md).
+**Next:** Phase 18 — AWS Infrastructure Foundation, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 17 packages the unchanged Phase 1–16 application; Docker engine unavailable, so no image-build/running-container verification, AWS deployment, full regression, or commit/push completion is claimed. See [Phase 17 setup and limitations](phase-17-containers.md).
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -111,7 +111,7 @@ Interview Mastery
 | 14 | Guardrails & AI Safety Controls | 🔄 Local implementation; 22 focused tests passed |
 | 15 | AI Evaluation & Testing | 🔄 Local implementation; 15 focused tests and 54 scenarios passed |
 | 16 | Observability & Auditability | 🔄 Local implementation; 18 focused tests passed |
-| 17 | Containerization | ⏳ |
+| 17 | Containerization | 🔄 Configuration implemented; 14 tests/Compose/build passed; runtime unverified |
 | 18 | AWS Infrastructure Foundation | ⏳ |
 | 19 | AWS Application Deployment | ⏳ |
 | 20 | Production Data Layer | ⏳ |
@@ -785,7 +785,7 @@ The versioned local dataset drives both agent implementations, real deterministi
 - Audit events
 - Human-review history
 
-Bounded metadata-only events cover HTTP authentication/routing, both agents, tools, structured model calls, eligibility, proposals, and HITL. Server-generated trace/span IDs correlate nested operations; error/latency/model/token metrics distinguish known usage from unknown counts. Successful review events derive actor IDs from authenticated context. Diagnostics require REVIEWER/ADMIN. Telemetry failures never retry or authorize business operations. Existing audit history, business rules, security, and no-execution boundaries remain authoritative. See [Phase 16 configuration, verification, and limitations](phase-16-observability.md). Remote exports, durable audit storage, production monitoring, and per-model cost accounting are not implemented. **Phase 17 is NOT started.**
+Bounded metadata-only events cover HTTP authentication/routing, both agents, tools, structured model calls, eligibility, proposals, and HITL. Server-generated trace/span IDs correlate nested operations; error/latency/model/token metrics distinguish known usage from unknown counts. Successful review events derive actor IDs from authenticated context. Diagnostics require REVIEWER/ADMIN. Telemetry failures never retry or authorize business operations. Existing audit history, business rules, security, and no-execution boundaries remain authoritative. See [Phase 16 configuration, verification, and limitations](phase-16-observability.md). Remote exports, durable audit storage, production monitoring, and per-model cost accounting are not implemented. Phase 17 packages these existing components below.
 
 ### Target
 
@@ -813,11 +813,13 @@ Audit Trail
 
 # 🐳 DEPLOYMENT FOUNDATION
 
-## Phase 17 — Containerization ⏳
+## Phase 17 — Containerization 🔄
 
 **Goal:** Prepare application components for repeatable production deployment.
 
-### Planned Work
+**Status:** Container configuration implemented; **14/14 focused tests, base/optional-auth Compose validation, and offline frontend build passed**. Docker's Linux engine is unavailable; image builds, Nginx runtime validation, container health/startup, and live smoke checks remain unverified. No dependency changes, full regression, AWS deployment, or commit/push completion is claimed.
+
+### Implemented Configuration
 
 - Backend Dockerfile
 - Frontend deployment/build strategy
@@ -826,6 +828,8 @@ Audit Trail
 - Health checks
 - Local container verification
 - Image optimization
+
+Backend/frontend multistage Dockerfiles, non-root single-worker runtime, same-origin API proxy, narrow context allowlists, read-only Compose filesystems, an internal application network plus a frontend-only edge network, loopback publication, process health checks, optional mounted credential configuration, and a read-only smoke checker are provided. Dependency/build caches and frontend build tools stay outside final images. Authentication still defaults to an empty registry, and no business state is persisted or seeded. Image sizes, immutable digest reproducibility, and production readiness are not verified. See [Phase 17 setup, checks, and limitations](phase-17-containers.md). **Phase 18 is NOT started.**
 
 ---
 
@@ -1358,8 +1362,8 @@ Phase 16  🔄 Local observability; 18 focused tests passed
 
 CLOUD & PRODUCTION
 ────────────────────────────────
-Phase 17  ⏳ NOT started; outside authorized scope
-Phase 18  ⏳
+Phase 17  🔄 Configuration implemented; 14 tests/Compose/build passed; runtime unverified
+Phase 18  ⏳ NOT started; outside authorized scope
 Phase 19  ⏳
 Phase 20  ⏳
 Phase 21  ⏳

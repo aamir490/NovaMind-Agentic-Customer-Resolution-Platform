@@ -1,6 +1,6 @@
 # Phase 16 — Observability & Auditability
 
-Local implementation with **18/18 focused tests passed** on October 2, 2026. Phase 1–15 business, security, orchestration, and evaluation boundaries are retained. No full regression, frontend verification, live provider/cloud call, dependency change, or commit/push is claimed. **Phase 17 is not started.**
+Local implementation with **18/18 focused tests passed** on October 2, 2026. Phase 1–15 business, security, orchestration, and evaluation boundaries are retained. No full regression, frontend verification, live provider/cloud call, dependency change, or commit/push is claimed. These are historical results; subsequent [Phase 17 packaging](phase-17-containers.md) preserves these application boundaries.
 
 ## Implemented capabilities
 
@@ -66,4 +66,4 @@ This is local, in-memory, best-effort observability, not durable, complete, tamp
 
 The new event schema excludes free text but does not redact existing Phase 8–15 diagnostic histories, checkpoints, third-party loggers, or host-controlled sinks. Audit UUIDs remain sensitive metadata and are available only through authenticated local diagnostics or trusted host logging. Token totals with unknown calls are partial, not complete billing estimates. SDK metadata behavior remains unverified against a live provider.
 
-Authentication, customer ownership, deterministic policies, allowlists, guardrail limits, case/proposal/step bounds, authenticated HITL, and no-execution behavior remain authoritative. SQLite still persists conversation text only; business stores, HITL checkpoints, and existing audit history remain in memory. **Phase 17 is not started.**
+Authentication, customer ownership, deterministic policies, allowlists, guardrail limits, case/proposal/step bounds, authenticated HITL, and no-execution behavior remain authoritative. SQLite still persists conversation text only; business stores, HITL checkpoints, and existing audit history remain in memory. These limits also apply to subsequent [Phase 17 containers](phase-17-containers.md).

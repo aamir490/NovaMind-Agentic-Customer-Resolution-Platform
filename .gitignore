@@ -6,6 +6,7 @@
 .aws/
 *.pem
 *.key
+.container-secrets/
 
 # Python
 __pycache__/

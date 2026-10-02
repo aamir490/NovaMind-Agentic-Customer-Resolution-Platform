@@ -1,5 +1,7 @@
 # Local development
 
+Phase 17 adds an optional [local container workflow](phase-17-containers.md) alongside the commands below. Container configuration, 14 focused tests, Compose validation, and an offline frontend build are verified; actual image builds/runtime remain unverified while the Docker engine is unavailable. Authentication still defaults to an empty registry; no anonymous business access or frontend login is added.
+
 The current backend includes the Phase 1 domain and Phase 2 business operations; the frontend adds a Phase 3 read-only case-review screen. See [the domain walkthrough](phase-1-domain.md) and [UI walkthrough/test commands](phase-3-case-review.md). Restarting or reloading the backend clears all customer, order, and case data; run one backend worker.
 
 ## Prerequisites

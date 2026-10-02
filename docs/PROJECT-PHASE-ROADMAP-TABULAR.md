@@ -1,4 +1,4 @@
-Current status: **Phase 16 local observability implemented; 18/18 focused tests passed**, retaining Phase 1–15 behavior and security boundaries. See [Phase 16 logs, traces, metrics, audit, and limitations](phase-16-observability.md). No new full regression, frontend build, live network/model calls, dependencies, or commit/push completion is claimed. Earlier phase test counts remain historical evidence. **Phase 17 is NOT started.**
+Current status: **Phase 17 container configuration implemented; 14/14 focused tests, Compose validation, and offline frontend build passed**. Docker's Linux engine is unavailable; image builds and running-container verification remain unverified. Existing Phase 1–16 application code/dependencies are unchanged. See [Phase 17 setup and limitations](phase-17-containers.md). No full regression, live model/AWS calls, deployment, or commit/push is claimed. Earlier counts remain historical evidence. **Phase 18 is NOT started.**
 
 Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions and authenticated reviewer IDs; credentials default to an empty registry. SQLite still persists conversation memory only. Business/domain records, LangGraph/HITL checkpoints, and audit history remain in memory. Full application restart cannot resume a conversation until authoritative case state exists again. There are no cross-store transactions, automatic replay, encryption, frontend login UI, or frontend memory UI. Stored conversation text remains untrusted context, not authoritative business state.
 
@@ -24,7 +24,7 @@ Local bearer authentication now establishes CUSTOMER/REVIEWER/ADMIN permissions 
 | **14** | Guardrails & AI Safety Controls — IMPLEMENTED LOCALLY | Input/output bounds, injection checks, retained tool/action restrictions; [focused verification and limits](phase-14-guardrails.md) |
 | **15** | AI Evaluation & Testing — IMPLEMENTED LOCALLY | Scripted local cases, explicit rubrics, retrieval metrics, safety/HITL and parity checks; [15 focused tests / 54 scenarios and limitations](phase-15-evaluations.md) |
 | **16** | Observability & Auditability — IMPLEMENTED LOCALLY | Bounded safe logs/traces, error/latency/usage metrics, proposal/review audit; [18 focused tests and limits](phase-16-observability.md) |
-| **17** | Containerization | Production Docker setup |
+| **17** | Containerization — CONFIGURATION IMPLEMENTED | Multistage images, local Compose, health/auth configuration; [14 focused tests and runtime limitations](phase-17-containers.md) |
 | **18** | AWS Infrastructure Foundation | VPC, IAM, networking and required AWS resources |
 | **19** | AWS Application Deployment | Deploy frontend/backend/services to AWS |
 | **20** | Production Data Layer | Durable database/cache/storage architecture |
