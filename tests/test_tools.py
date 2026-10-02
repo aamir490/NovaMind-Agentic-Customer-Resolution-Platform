@@ -38,6 +38,7 @@ class LocalToolTests(unittest.TestCase):
     def test_exact_allowlist_and_typed_schemas(self):
         descriptions = self.tools.describe()
         self.assertEqual({d.name for d in descriptions}, {
+            "search_knowledge",
             "get_customer", "get_order", "get_case", "get_inventory", "get_policy",
             "assess_eligibility", "create_resolution_proposal", "get_proposal_status",
         })

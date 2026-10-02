@@ -8,11 +8,11 @@
 
 ## 📌 Current Project Status
 
-**Current Phase:** ✅ Phase 10 — Human-in-the-Loop Agent Workflow (complete following user-reported independent verification)
+**Current Phase:** ✅ Phase 11 — Knowledge Base & RAG (complete following user-reported independent verification)
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 11 — Knowledge Base & RAG, pending explicit approval; NOT started. Bedrock remains deferred.
+**Next:** Phase 12 — Conversation Memory & Persistence, pending explicit approval; NOT started. Bedrock remains deferred.
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -105,7 +105,7 @@ Interview Mastery
 | 8 | Customer Resolution Agent | ✅ Complete; final verification passed |
 | 9 | LangGraph Workflow | Verified baseline per user; retained unchanged |
 | 10 | Human-in-the-Loop Agent Workflow | ✅ Complete; independent verification passed |
-| 11 | Knowledge Base & RAG | ⏳ Next; not started |
+| 11 | Knowledge Base & RAG | ✅ Complete; independent verification passed |
 | 12 | Conversation Memory & Persistence | ⏳ |
 | 13 | Authentication & Authorization | ⏳ |
 | 14 | Guardrails & AI Safety Controls | ⏳ |
@@ -567,7 +567,7 @@ END
 
 Limitations remain: reviewer identity is not authenticated; checkpoints are in-memory and lost on restart; no durable recovery or frontend HITL UI exists; approval/rejection does not execute business actions.
 
-The local LangGraph workflow now interrupts after pending proposal creation, stores JSON-compatible state in `InMemorySaver`, and resumes with a validated workflow/case/proposal/review-bound human decision. It calls the existing Phase 4 review service directly, records audit history, and ends without another LLM call or business action. No new packages, durable storage, authentication, or frontend UI. See [Phase 10 contracts and limitations](phase-10-hitl.md). Phase 11 has not started.
+The local LangGraph workflow interrupts after pending proposal creation, stores JSON-compatible state in `InMemorySaver`, and resumes with a validated workflow/case/proposal/review-bound human decision. It calls the existing Phase 4 review service directly, records audit history, and ends without another LLM call or business action. No new packages, durable storage, authentication, or frontend UI were added in Phase 10. See [Phase 10 contracts and limitations](phase-10-hitl.md). These boundaries remain authoritative in Phase 11.
 
 **Goal:** Integrate human review directly into the agentic workflow.
 
@@ -604,9 +604,13 @@ Controlled Continuation
 
 # 📚 KNOWLEDGE & RAG
 
-## Phase 11 — Knowledge Base & RAG ⏳
+## Phase 11 — Knowledge Base & RAG ✅ Complete
 
-**Status:** Next phase; awaiting explicit approval. NOT started.
+**Status:** Complete following user-reported independent verification: focused Knowledge/RAG tests **15/15 passed**, full backend regression **144/144 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. No new commit/push completion is claimed.
+
+Limitations remain: local lexical/token-cosine retrieval only; no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted information; deterministic business rules and HITL remain authoritative.
+
+Three support guidance/SOP fixtures, validated source/document/chunk/result contracts, deterministic loading/chunking, embedding/retrieval interfaces, and lexical cosine search are available through read-only `search_knowledge`. Existing LangGraph/HITL paths consume the new tool through their catalog without orchestration changes. Retrieved text is untrusted reference data; no domain, eligibility, policy, inventory, proposal, or human-review rule changes. No new packages, neural embeddings, vector database, network calls, or production persistence. See [Phase 11 details](phase-11-knowledge.md). The target concepts below remain planning context where they exceed this local baseline.
 
 **Goal:** Ground AI responses in trusted customer-support knowledge.
 
@@ -651,6 +655,8 @@ Grounded Response
 # 💾 MEMORY & PERSISTENCE
 
 ## Phase 12 — Conversation Memory & Persistence ⏳
+
+**Status:** Next phase; awaiting explicit approval. NOT started.
 
 **Goal:** Replace temporary in-memory state with appropriate durable storage.
 
@@ -1330,8 +1336,8 @@ Phase 10  ✅ Complete; independent verification passed
 
 KNOWLEDGE & STATE
 ────────────────────────────────
-Phase 11  ⏳ NEXT — awaiting approval; NOT started
-Phase 12  ⏳
+Phase 11  ✅ Complete; independent verification passed
+Phase 12  ⏳ NEXT — awaiting approval; NOT started
 
 SECURITY & AI QUALITY
 ────────────────────────────────

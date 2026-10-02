@@ -1,5 +1,21 @@
 # Local verification evidence
 
+## Phase 11 — Complete; independent verification reported by the user
+
+- Phase 11 focused Knowledge/RAG tests: **15/15 passed**.
+- Full backend regression: **144/144 passed**.
+- Frontend API tests: **6/6 passed**.
+- Frontend production build: **passed**.
+- `git diff --check`: **passed with CRLF/LF normalization warnings only**.
+
+These user-supplied results were not rerun during this documentation-only update. Phase 11 is complete; Phase 12 is next but has not started. Retrieval remains local lexical/token-cosine only: no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted; deterministic business rules and HITL remain authoritative.
+
+### Implementation-time focused local knowledge verification
+
+- `./backend/.venv/Scripts/python.exe -B -m unittest discover -s tests -p test_knowledge.py -v`: **15/15 passed** using deterministic retrieval and fake LLMs.
+- Covers contracts, corpus/chunk stability, ranking, bounds, safe failures, read-only behavior, Phase 8/9 evidence parity, malicious retrieved instructions, eligibility preservation, and HITL pause/resume with citation metadata.
+- During implementation, no new packages, live Gemini/embedding/network calls, full regression, frontend build, or browser checks. Subsequent independent results are recorded above. See [Phase 11 details](phase-11-knowledge.md). Phase 12 has not started.
+
 ## Phase 10 — Complete; independent verification reported by the user
 
 - Phase 10 focused HITL tests: **20/20 passed**.

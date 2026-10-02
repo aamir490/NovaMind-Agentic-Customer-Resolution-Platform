@@ -1,4 +1,4 @@
-Current status: **Phase 10 complete**, following user-reported independent verification: focused HITL tests **20/20 passed**, full backend regression **129/129 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Reviewer identity remains unauthenticated; checkpoints are in-memory and lost on restart; there is no durable recovery or frontend HITL UI; approval/rejection does not execute business actions. Live Gemini remains unverified. Phase 11 is **next, pending approval; NOT started**. Bedrock remains deferred. No new commit/push completion is claimed.
+Current status: **Phase 11 complete**, following user-reported independent verification: focused Knowledge/RAG tests **15/15 passed**, full backend regression **144/144 passed**, frontend API tests **6/6 passed**, frontend production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. Retrieval remains local lexical/token-cosine only; no production semantic embedding provider/vector database, live embedding/network calls, or frontend RAG UI. Retrieved content remains untrusted information; deterministic business rules and HITL remain authoritative. Phase 12 is **next, pending approval; NOT started**. No new commit/push completion is claimed.
 
 | Phase | Name | Main Goal |
 |---|---|---|
@@ -16,7 +16,7 @@ Current status: **Phase 10 complete**, following user-reported independent verif
 | **8** | First Customer-Resolution Agent — COMPLETE | Final verification passed; see [details](phase-8-agent.md) |
 | **9** | LangGraph Workflow — VERIFIED BASELINE | Retained unchanged; [25 implementation-time focused tests](phase-9-langgraph.md) |
 | **10** | Human-in-the-Loop Agent Workflow — COMPLETE | Independent verification passed; [results and limitations](phase-10-hitl.md) |
-| **11** | Knowledge Base & RAG | Ground responses using support/policy knowledge |
+| **11** | Knowledge Base & RAG — COMPLETE | Independent verification passed; [results and limitations](phase-11-knowledge.md) |
 | **12** | Conversation Memory & Persistence | Durable cases, conversations and workflow state |
 | **13** | Authentication & Authorization | Users, roles and protected operations |
 | **14** | Guardrails & AI Safety Controls | Input/output/tool/action safeguards |

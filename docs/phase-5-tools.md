@@ -1,5 +1,7 @@
 # Phase 5 — Agent-ready local tool layer
 
+Phase 11 extends this original eight-tool catalog with read-only `search_knowledge`; the original tool contracts remain unchanged. See [retrieval contracts and limits](phase-11-knowledge.md).
+
 These are ordinary in-process Python tools, not an agent implementation. `create_app()` wires `app.state.local_tools` to the same local services used by the existing APIs. No SDK, transport, endpoint, dependency, or business rule is added.
 
 ## Available tools
