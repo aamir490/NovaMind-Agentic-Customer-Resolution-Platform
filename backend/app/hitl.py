@@ -2,11 +2,12 @@
 
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Literal
+from typing import Callable, Literal
 from uuid import UUID, uuid4
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.errors import GraphInterrupt
 from langgraph.types import Command, interrupt
 from langsmith import tracing_context
 from pydantic import ConfigDict, ValidationError
@@ -84,18 +85,20 @@ class ResumeRejected(Contract):
 
 class HITLWorkflow:
     def __init__(self, llm: StructuredLLM, tools: LocalTools, proposals: ProposalService,
-                 config: AgentConfig | None = None, *, memory: ConversationService | None = None) -> None:
+                 config: AgentConfig | None = None, *, memory: ConversationService | None = None,
+                 on_transition: Callable[[str, str, HITLState], None] | None = None) -> None:
         self._config = config or AgentConfig()
         self._baseline = GraphResolutionAgent(llm, tools, self._config, memory=memory)
         self._memory = memory
+        self._on_transition = on_transition
         self._proposals = proposals
         self._lock = RLock()
         self._runs: dict[UUID, str] = {}
         graph = StateGraph(HITLState)
         for name in ("load_case", "reason", "execute_tool", "record_result", "finalize", "fail_safely"):
-            graph.add_node(name, self._delegate(name))
-        graph.add_node("prepare_review", self._prepare_review)
-        graph.add_node("human_review", self._human_review)
+            graph.add_node(name, self._instrument(name, self._delegate(name)))
+        graph.add_node("prepare_review", self._instrument("prepare_review", self._prepare_review))
+        graph.add_node("human_review", self._instrument("human_review", self._human_review))
         graph.add_edge(START, "load_case")
         graph.add_conditional_edges("load_case", lambda s: "fail_safely" if s.agent.error else "reason",
                                     {n: n for n in ("fail_safely", "reason")})
@@ -110,6 +113,32 @@ class HITLWorkflow:
         graph.add_edge("finalize", END)
         graph.add_edge("fail_safely", END)
         self._graph = graph.compile(checkpointer=InMemorySaver())
+
+    def _instrument(self, name, node):
+        # Trusted, passive host callback. Sink failures cannot affect graph decisions
+        # or retry a node with a possibly committed business/memory write.
+        def publish(phase, state, updates=None):
+            if self._on_transition is not None:
+                try:
+                    if updates is not None:
+                        state = HITLState.model_validate({**state.model_dump(), **updates})
+                    self._on_transition(name, phase, state)
+                except Exception:
+                    pass
+
+        def wrapped(state: HITLState):
+            publish("STARTED", state)
+            try:
+                updates = node(state)
+            except GraphInterrupt:
+                publish("PAUSED", state)
+                raise
+            except Exception:
+                publish("FAILED", state)
+                raise
+            publish("COMPLETED", state, updates)
+            return updates
+        return wrapped
 
     @staticmethod
     def _event(state: HITLState, kind: str, **fields) -> WorkflowEvent:

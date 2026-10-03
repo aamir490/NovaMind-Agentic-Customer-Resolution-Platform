@@ -12,7 +12,7 @@
 
 **Completed:** ✅ Phase 0A through Phase 5. Phase 6 implementation and focused tests are complete and committed; broader verification is not claimed here.
 
-**Next:** Phase 18 — AWS Infrastructure Foundation, NOT started and outside the authorized scope. Bedrock remains deferred. Phase 17 packages the unchanged Phase 1–16 application; Docker engine unavailable, so no image-build/running-container verification, AWS deployment, full regression, or commit/push completion is claimed. See [Phase 17 setup and limitations](phase-17-containers.md).
+**Next planned:** Phase 17A — Production Agentic Frontend & Live Workflow UX. Roadmap only; implementation is NOT started. Phase 18 — AWS Infrastructure Foundation is NOT started and outside the authorized scope. Bedrock remains deferred. Phase 17 packages the unchanged Phase 1–16 application; Docker engine unavailable, so no image-build/running-container verification, AWS deployment, full regression, or commit/push completion is claimed. See [Phase 17 setup and limitations](phase-17-containers.md).
 
 Phase 8 completion is recorded at the user's direction: focused agent tests **15/15**, backend regression **84/84**, frontend API tests **6/6**, production build **passed**, and `git diff --check` **passed with CRLF/LF normalization warnings only**. This documentation update makes no new claim about commit or push status.
 
@@ -66,6 +66,8 @@ Observability
         ↓
 Containers
         ↓
+Production Agentic Frontend & Live Workflow UX (17A)
+        ↓
 AWS Infrastructure
         ↓
 AWS Deployment
@@ -112,6 +114,7 @@ Interview Mastery
 | 15 | AI Evaluation & Testing | 🔄 Local implementation; 15 focused tests and 54 scenarios passed |
 | 16 | Observability & Auditability | 🔄 Local implementation; 18 focused tests passed |
 | 17 | Containerization | 🔄 Configuration implemented; 14 tests/Compose/build passed; runtime unverified |
+| 17A | Production Agentic Frontend & Live Workflow UX | ⏳ Planned only; implementation not started |
 | 18 | AWS Infrastructure Foundation | ⏳ |
 | 19 | AWS Application Deployment | ⏳ |
 | 20 | Production Data Layer | ⏳ |
@@ -833,6 +836,62 @@ Backend/frontend multistage Dockerfiles, non-root single-worker runtime, same-or
 
 ---
 
+## Phase 17A — Production Agentic Frontend & Live Workflow UX ⏳
+
+**Status:** Proposed scope only. This update changes the two roadmap files; no UI, API, tests, dependencies, or deployment are implemented. Phase 17 verification limitations remain unchanged. Phase 18/AWS is NOT started.
+
+**Goal:** Replace the Phase 3 demo presentation with a professional dark enterprise workspace over the existing Phase 4–17 components. “Production” describes the intended UX quality, not a claim of production authentication, durable workflow recovery, or deployment readiness.
+
+### Planned Frontend Scope
+
+- **Enterprise shell:** restrained dark surfaces, consistent typography/spacing, accessible contrast, keyboard navigation, visible focus, responsive navigation and panels, and reduced-motion support. Provide honest loading, empty, denied, unavailable, stale, and error states.
+- **Authentication:** credential entry for the existing local bearer provider, backend-confirmed identity/role, protected navigation, and client sign-out that clears credentials and case caches. Keep credentials in memory, never in URLs, logs, bundles, or persistent browser storage. Do not invent password login, registration, token expiry/refresh, or server revocation.
+- **Dashboard:** authorized case queue with search/filtering, case status, pending reviews, and backend-confirmed workflow summaries. Label count scope and freshness; show unavailable metrics as unavailable, never synthetic activity, savings, or success rates.
+- **Case workspace:** case/customer/order context, inventory, authoritative policy and eligibility results, proposals, and a review panel. Preserve Phase 3 read capabilities and display backend decisions without reproducing eligibility rules in JavaScript.
+- **AI assistant and conversation history:** case-bound requests and validated application responses, ordered saved messages, clear run/conversation IDs, input limits, and explicit provider/guardrail/memory failures. Distinguish conversation text from authoritative case, proposal, and workflow state; prevent duplicate submissions and do not replay writes after an uncertain response.
+- **Live agent/LangGraph tracking:** a readable graph and timeline using the actual nodes (`load_case`, `reason`, `execute_tool`, `record_result`, `finalize`, `fail_safely`, plus HITL `prepare_review`/`human_review`). Display only backend-observed transitions, repeated steps, pauses, completion, and failures; expose safe operational summaries, never private model reasoning or raw prompts.
+- **Tool activity and RAG evidence:** server-reported allowed-tool calls, safe result summaries and errors, and retrieved document/title/version/chunk references, excerpts, method, and scores where available. A retrieval score is not model confidence. Clearly label evidence as untrusted reference material; absent evidence stays absent.
+- **Proposals and HITL:** show proposed action, rationale, authoritative eligibility, pending/approved/rejected status, and an explicit reviewer approve/reject form. Workflow reviews must use the bound workflow/case/proposal/review IDs and authenticated reviewer identity. Reconcile stale, repeated, and conflicting decisions with the backend; always state that approval does not execute an action.
+- **Audit and observability:** REVIEWER/ADMIN views for permitted workflow/review history, trace correlation, latency/errors, known/unknown token usage, and event-retention gaps. Separate operational telemetry from authoritative business review state; hide privileged diagnostics from CUSTOMER views.
+
+### Real Live State Contract
+
+- Backend state/events are the sole source of workflow progress. No timed node animations, invented percentages, fake tool calls, simulated typing, or replaying a completed trace as a live run. Ordinary loading indicators express a pending request only.
+- Plan a bounded, authenticated run snapshot and incremental event contract: server-generated run/workflow and case IDs, ordered event IDs/sequences, server timestamps, actual node/tool lifecycle state, safe outcomes/errors, proposal/review linkage, and trace correlation where available. These are proposed contracts, not existing HTTP APIs.
+- Prefer authenticated polling of snapshots/events as the initial transport; evaluate SSE only if needed. Any stream must preserve bearer authorization without query-string credentials. Reads must work while execution is active; a synchronous final response followed by client animation does not satisfy live tracking.
+- On reconnect, deduplicate/order events and reconcile with the authoritative snapshot. Bound retention and pagination; report dropped events, stale connections, unknown runs, and restart loss explicitly. A disconnected browser neither implies failure nor authorizes starting/resuming the workflow again.
+- Preserve existing workflow outcomes (`REVIEW_REQUIRED`, `REVIEWED`, `COMPLETED`, `FAILED`) and proposal statuses. Running/resuming/node activity must be explicitly reported by the backend. Transport state, workflow outcome, human decision, and action execution are separate concepts.
+
+### Existing APIs and Required Integration Gaps
+
+Repository baseline: `backend/app/main.py` registers only case/customer/order, business-operation, proposal/review, and health routes. `frontend/src/api.js` currently offers unauthenticated GET helpers. The following gaps must be resolved as narrowly scoped Phase 17A integration work when implementation is authorized; endpoint names and schemas still need definition.
+
+1. **Identity:** bearer validation and role/ownership checks exist, but no current-user/permissions endpoint or frontend auth client exists. Add a minimal authenticated identity contract over the existing provider. Static credentials have no expiry/refresh/revocation service; production identity infrastructure remains out of scope.
+2. **Dashboard:** `GET /api/cases` provides an ownership-filtered case list; case detail/context and per-case proposal APIs exist. There is no aggregate dashboard, workflow list, or paginated queue contract. Reuse authorized reads first, label derived counts accurately, and add only bounded summaries/pagination required by the workspace.
+3. **Agent execution and live tracking:** `GraphResolutionAgent` and `HITLWorkflow` are local Python components, not wired into FastAPI. Their public execution methods return after execution/pause; the graph stream is consumed internally, HITL uses synchronous invocation/locking, and no HTTP start/status/events endpoint exists. Plan trusted server-side composition, bounded execution scheduling, run ownership, request deduplication, and safe incremental state/event publication without changing graph decisions, budgets, tools, or review semantics. Carry authenticated and observing context into execution; never accept identity, provider configuration, graph state, or checkpoint data from the browser.
+4. **Tool/RAG presentation:** tool histories and `search_knowledge` retrieval metadata exist internally, but there is no safe run-scoped HTTP projection. Add allowlisted, access-controlled summaries/evidence tied to the actual run. Do not serialize raw graph state, unrestricted tool payloads, prompts, secrets, or full internal audit objects to the browser; do not open a generic tool-execution API.
+5. **Conversation history:** `ConversationService` and the SQLite store support case-bound create/list/load/append locally, but are not composed into the HTTP app and have no routes. Plan authorized history/read and user-message submission contracts that reuse those services; only the server may record assistant outputs. Preserve limits and independent memory-write failure handling without replaying proposals/reviews.
+6. **HITL:** proposal GET/list and POST approve/reject routes already exist, but no paused-workflow lookup/resume endpoint exists. A direct proposal approval does not resume a graph. Add a bound decision/resume adapter over `HITLWorkflow.resume`; select the correct path for workflow-bound versus standalone proposals, never call both for one decision. Preserve authenticated reviewer identity and mismatch/already-reviewed/conflict protection.
+7. **Audit/observability:** HTTP responses already supply `X-Trace-ID`; `HITLWorkflow.audit` and `LocalObserver.snapshot` are local REVIEWER/ADMIN-only methods. Add bounded, sanitized read contracts for permitted diagnostics and metrics, preserving role restrictions, retention-gap reporting, metadata-only telemetry, and unknown usage values. Diagnostics must never become an authorization or execution mechanism.
+8. **Runtime wiring:** the container backend has no external egress and no agent/provider/memory composition today. Plan local deterministic provider-backed integration through the real workflow; clearly label that provider as local/scripted. “Live” means real execution events, not a live Gemini call. An unavailable provider must produce an unavailable UI state. Keep same-origin `/api`, internal backend networking, frontend-only edge networking, loopback publication, and container hardening intact; no network relaxation or new persistence deployment is implied.
+
+### Preserved Boundaries and Exclusions
+
+- Preserve all Phase 4–17 security and business behavior: eligibility is not authorization; approval is not execution. No refunds, payments, order/inventory mutations, external actions, autonomous approval/rejection, or model-selected privileged operations.
+- Enforce existing CUSTOMER ownership and REVIEWER/ADMIN permissions server-side for every new read, start, event subscription/poll, history request, and decision. UI visibility is not authorization. Guardrails, tool allowlists, structured validation, case/step/proposal limits, and human-review checks remain authoritative.
+- Treat assistant text, conversation history, and RAG excerpts as untrusted display content; render safely, without executable HTML or unsafe citation links. Keep model/provider secrets on the backend and preserve telemetry redaction.
+- SQLite remains conversation-only; domain records, workflow checkpoints, and audit/telemetry remain in memory. Do not claim durable workflow recovery, cross-store transactions, multi-worker coordination, automatic replay, or complete audit retention.
+- No unrelated refactoring or unnecessary dependencies; no changes to the three untracked JSON files. No Phase 18/AWS, Bedrock integration, cloud authentication, production data layer, remote telemetry export, or live Gemini/network/AWS verification. Broader production infrastructure remains in its existing later phases.
+
+### Planned Acceptance and Focused Verification
+
+- Implement only after separate authorization, starting with minimal contracts and backend adapters, then auth/shell/case views, then assistant/history/live tracking/evidence, then HITL/diagnostics. Reuse existing React/Vite, FastAPI, LangGraph, and Phase 15 deterministic evaluation fixtures where suitable.
+- Future focused local tests must drive the real backend workflow with scripted providers and real controlled services; separately test browser rendering with recorded contract fixtures clearly confined to tests. Check that UI transitions follow backend events, including slow/no-event runs, tool/RAG failures, review pauses, and terminal outcomes.
+- Verify unauthorized/cross-customer access, role isolation, safe rendering/redaction, empty/unavailable states, event ordering/duplication/gaps/reconnect, restart loss, uncertain submissions without replay, mismatched/stale/concurrent HITL decisions, and memory failures after committed business changes.
+- Check keyboard/contrast/responsive behavior, preservation of existing case-review capabilities and container `/api` routing, and that approval/rejection executes no business action. Run focused Phase 17A tests only when implemented, without live provider/network/AWS calls. This roadmap-only update runs no application tests and claims no implementation or new verification results.
+
+---
+
 # ☁️ AWS FOUNDATION
 
 ## Phase 18 — AWS Infrastructure Foundation ⏳
@@ -1363,6 +1422,7 @@ Phase 16  🔄 Local observability; 18 focused tests passed
 CLOUD & PRODUCTION
 ────────────────────────────────
 Phase 17  🔄 Configuration implemented; 14 tests/Compose/build passed; runtime unverified
+Phase 17A ⏳ Planned frontend/live workflow UX only; implementation NOT started
 Phase 18  ⏳ NOT started; outside authorized scope
 Phase 19  ⏳
 Phase 20  ⏳
