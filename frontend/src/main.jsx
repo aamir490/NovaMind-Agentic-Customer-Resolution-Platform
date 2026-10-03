@@ -191,7 +191,7 @@ function App() {
             <p>{view.placeholder}</p>
           </section>}
           {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
-          <div className="workspace-grid" hidden={activeView !== 'cases'}>
+          <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
             <CaseReview key={sessionVersion} api={session?.api} />
             <aside className="workspace-rail" aria-label="Workspace information">
               <section className="connection-panel" aria-labelledby="connection-title">
