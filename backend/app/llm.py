@@ -5,7 +5,7 @@ from typing import Annotated, Generic, Literal, Protocol, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
 from .guardrails import GuardrailError, MAX_PROMPT_CHARS, validate_response_json
-from .observability import annotate, observed
+from .observability import annotate, annotate_schema_validation, observed
 
 
 class LLMModel(BaseModel):
@@ -94,6 +94,7 @@ class StructuredLLM:
         try:
             response = LLMResponse.model_validate(raw)
         except ValidationError:
+            annotate(invalid_response_stage="provider_envelope")
             return LLMFailure(code="INVALID_RESPONSE", message="Invalid provider response envelope")
         if response.usage is not None:
             annotate(**response.usage.model_dump())
@@ -103,8 +104,15 @@ class StructuredLLM:
             return LLMFailure(code="INCOMPLETE", message="Provider output was truncated")
         try:
             validate_response_json(response.text)
-            data = output_model.model_validate_json(response.text, strict=True)
         except (ValidationError, GuardrailError):
+            annotate(invalid_response_stage="json_guardrail")
+            return LLMFailure(code="INVALID_RESPONSE", message="Output does not match the requested JSON model")
+        try:
+            data = output_model.model_validate_json(response.text, strict=True)
+        except (ValidationError, GuardrailError) as error:
+            annotate(invalid_response_stage="output_schema")
+            if isinstance(error, ValidationError):
+                annotate_schema_validation(error)
             return LLMFailure(code="INVALID_RESPONSE", message="Output does not match the requested JSON model")
         return LLMSuccess[output_model](data=data)
 

@@ -7,6 +7,7 @@ from google import genai
 from google.genai import errors, types
 
 from .llm import LLMRequest, LLMResponse, ProviderFailure, TokenUsage
+from .observability import annotate
 
 
 def _usage(response):
@@ -84,6 +85,7 @@ class GeminiProvider:
         except (httpx.TimeoutException, TimeoutError):
             raise ProviderFailure("TIMEOUT") from None
         except errors.APIError as error:
+            annotate(provider_status_code=error.code)
             raise ProviderFailure("TIMEOUT" if error.code in (408, 504) else "UNAVAILABLE") from None
         except httpx.TransportError:
             raise ProviderFailure("UNAVAILABLE") from None

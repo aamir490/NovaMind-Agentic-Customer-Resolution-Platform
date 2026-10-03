@@ -1,9 +1,12 @@
-"""Trusted startup configuration only. No provisioning, seeding, or model startup."""
+"""Trusted runtime configuration only. No provisioning, seeding, or model calls."""
 
+from contextlib import asynccontextmanager
 import json
 import os
 from pathlib import Path
+import re
 
+from backend.app.gemini import GeminiProvider
 from backend.app.main import create_app
 from backend.app.security import LocalAuthenticationProvider, LocalCredential
 
@@ -17,11 +20,10 @@ def _unique(pairs):
     return result
 
 
-def create_container_app():
-    """Absent configuration stays default-deny; invalid configuration stops startup."""
+def _authentication_provider():
     location = os.environ.get("NOVAMIND_AUTH_FILE", "")
     if not location:
-        return create_app()
+        return None
     try:
         path = Path(location)
         if not path.is_absolute():
@@ -38,4 +40,49 @@ def create_container_app():
     except Exception:
         # Never put credentials, file paths, or Pydantic input excerpts in logs.
         raise RuntimeError("Container authentication configuration is invalid") from None
-    return create_app(auth_provider=provider)
+    return provider
+
+
+def _gemini_provider():
+    # Explicit runtime injection only; no .env loading or alternative key lookup.
+    key = os.environ.get("GEMINI_API_KEY")
+    model = os.environ.get("GEMINI_MODEL")
+    if key is None and model is None:
+        return None
+    try:
+        if (not key or len(key) > 4096 or not key.isascii()
+                or any(character.isspace() or not character.isprintable() for character in key)):
+            raise ValueError("Invalid key")
+        if not model or not re.fullmatch(r"(?:models/)?gemini-[A-Za-z0-9][A-Za-z0-9._-]{0,127}", model):
+            raise ValueError("Invalid model")
+        return GeminiProvider(model=model)
+    except Exception:
+        # SDK errors can include configuration values; expose only a fixed message.
+        raise RuntimeError("Container Gemini configuration is invalid") from None
+
+
+def create_container_app():
+    """Absent configuration stays default-deny; invalid configuration stops startup."""
+    auth_provider = _authentication_provider()
+    provider = _gemini_provider()
+    try:
+        app = create_app(auth_provider=auth_provider,
+                         local_provider_factory=(lambda: provider) if provider is not None else None)
+    except Exception:
+        if provider is not None:
+            provider.close()
+        raise
+    if provider is not None:
+        original_lifespan = app.router.lifespan_context
+
+        @asynccontextmanager
+        async def lifespan(app):
+            try:
+                async with original_lifespan(app):
+                    yield
+            finally:
+                # The existing lifespan drains run workers before closing their client.
+                provider.close()
+
+        app.router.lifespan_context = lifespan
+    return app

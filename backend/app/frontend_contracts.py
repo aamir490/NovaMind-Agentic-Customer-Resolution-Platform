@@ -10,6 +10,7 @@ from .agent import AgentRequest, Contract
 from .conversations import Conversation, ConversationMessage
 from .hitl import HumanDecision, ReviewRequired
 from .knowledge import RetrievalHit
+from .observability import MAX_SCHEMA_ERRORS, MAX_SCHEMA_LOCATION
 from .security import AuthenticatedIdentity
 
 
@@ -115,6 +116,18 @@ class AuditPage(Contract):
     scope: Literal["in_memory_workflow_audit"] = "in_memory_workflow_audit"
 
 
+class OutputSchemaError(Contract):
+    # Mirror the observer's fixed vocabulary; never accept arbitrary error text.
+    type: Literal["missing", "extra_forbidden", "union_tag_invalid", "union_tag_not_found",
+        "literal_error", "string_type", "int_type", "float_type", "bool_type", "dict_type", "list_type",
+        "tuple_type", "model_type", "model_attributes_type", "json_type", "enum", "uuid_type", "uuid_parsing",
+        "string_too_short", "string_too_long", "string_pattern_mismatch", "greater_than", "greater_than_equal",
+        "less_than", "less_than_equal", "too_short", "too_long", "finite_number", "value_error", "assertion_error",
+        "other"]
+    location: tuple[Literal["decision", "kind", "name", "arguments", "tool", "final",
+                            "<field>", "<index>", "<unknown>", "<truncated>"], ...] = Field(max_length=MAX_SCHEMA_LOCATION)
+
+
 class TelemetryEvent(Contract):
     timestamp: datetime
     operation: str
@@ -130,8 +143,12 @@ class TelemetryEvent(Contract):
     tool: str | None = None
     status: str | None = None
     provider: Literal["gemini", "fake", "other"] | None = None
+    invalid_response_stage: Literal["provider_envelope", "json_guardrail", "output_schema"] | None = None
+    output_schema_errors: tuple[OutputSchemaError, ...] | None = Field(default=None, max_length=MAX_SCHEMA_ERRORS)
+    output_schema_errors_truncated: bool | None = Field(default=None, strict=True)
     method: str | None = None
     status_code: int | None = None
+    provider_status_code: int | None = Field(default=None, strict=True, ge=100, le=599)
     input_tokens: int | None = None
     output_tokens: int | None = None
     total_tokens: int | None = None

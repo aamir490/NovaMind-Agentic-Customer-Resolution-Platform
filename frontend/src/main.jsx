@@ -2,6 +2,7 @@ import { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import CaseReview from './CaseReview.jsx';
+import AIWorkspace from './AIWorkspace.jsx';
 import { createApi } from './api.js';
 
 const views = [
@@ -13,8 +14,7 @@ const views = [
     description: 'Customer context, policy, and eligibility. One place to review the details.',
     icon: 'M4 5h16v15H4zM9 5V3h6v2M8 10h8M8 14h5' },
   { id: 'ai-workspace', label: 'AI Workspace', title: 'AI Workspace',
-    description: 'A place for assisted customer resolution.',
-    placeholder: 'The AI workspace is not available yet. No agent activity is displayed or started here.',
+    description: 'Submit a case-bound request and inspect the returned run snapshot.',
     icon: 'M5 4h14v12H9l-4 4zM8 8h8M8 12h5' },
   { id: 'reviews', label: 'Reviews', title: 'Reviews',
     description: 'A place for human review.',
@@ -47,7 +47,7 @@ function App() {
   function signOut() {
     clearIdentity();
     setIdentityStatus('signed-out');
-    setIdentityMessage('Signed out locally. Credentials and case data have been cleared.');
+    setIdentityMessage('Signed out locally. Credentials and workspace data have been cleared. Submitted runs are not cancelled.');
   }
 
   async function confirmIdentity(event) {
@@ -183,13 +183,16 @@ function App() {
               <h1 aria-live="polite">{view.title}</h1>
               <p className="intro">{view.description}</p>
             </div>
-            <span className="badge">{activeView === 'cases' ? 'Read-only workspace' : 'Placeholder view'}</span>
+            <span className="badge">{activeView === 'cases' ? 'Read-only workspace' : activeView === 'ai-workspace' ? 'Run submission' : 'Placeholder view'}</span>
           </div>
-          {activeView !== 'cases' && <section className="view-placeholder" aria-labelledby="placeholder-title">
+          {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
             <p className="eyebrow">{view.label}</p>
             <h2 id="placeholder-title">This view is not connected yet.</h2>
             <p>{view.placeholder}</p>
           </section>}
+          <div hidden={activeView !== 'ai-workspace'}>
+            <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
+          </div>
           {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
           <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
             <CaseReview key={sessionVersion} api={session?.api} />

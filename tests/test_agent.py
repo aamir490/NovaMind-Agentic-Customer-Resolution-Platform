@@ -7,7 +7,9 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from backend.app.agent import AgentConfig, AgentRequest, AgentResult, ResolutionAgent
+from backend.app.agent import AgentConfig, AgentDecision, AgentRequest, AgentResult, ResolutionAgent
+from backend.app.conversations import MEMORY_INSTRUCTIONS
+from backend.app.guardrails import SAFETY_INSTRUCTIONS
 from backend.app.llm import LLMResponse, ProviderFailure, StructuredLLM
 from backend.app.main import create_app
 from backend.app.schemas import CaseCreate, CustomerCreate, OrderCreate
@@ -25,9 +27,11 @@ class ScriptedProvider:
     def __init__(self, script):
         self.script = iter(script)
         self.requests = []
+        self.schemas = []
 
     def generate(self, request, *, response_schema):
         self.requests.append(request)
+        self.schemas.append(response_schema)
         value = next(self.script)
         if isinstance(value, Exception):
             raise value
@@ -72,6 +76,48 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(self.provider.requests[1].messages[-2].role, "assistant")
         self.assertEqual(AgentResult.model_validate_json(result.model_dump_json()), result)
         self.assertFalse(result.actions_executed)
+
+    def test_decision_schema_instructions_are_explicit_and_retained_between_steps(self):
+        result = self.run_script([call("get_inventory", sku="LAP-1"), FINAL])
+        self.assertEqual(result.status, "INFORMATIONAL")
+        self.assertFalse(result.actions_executed)
+        self.assertEqual(len(self.provider.requests), 2)
+        instructions = self.provider.requests[0].messages[0].content
+        for request in self.provider.requests:
+            self.assertEqual(request.messages[0].role, "system")
+            self.assertEqual(request.messages[0].content, instructions)
+        for text in ("Every response must be a JSON object matching the provided schema",
+                     "top-level decision object", 'decision.kind must be exactly "tool" for a tool call or "final" for completion',
+                     "Tool decisions require name", "arguments (a JSON object", '{"decision":{"kind":"final"}}',
+                     "Do not use other kind values, extra fields, Markdown, or prose",
+                     MEMORY_INSTRUCTIONS, SAFETY_INSTRUCTIONS, "Eligibility is not authorization",
+                     "At most one proposal may be created per run", "only for the supplied case"):
+            self.assertIn(text, instructions)
+        self.assertEqual(json.loads(instructions.split("Tools: ", 1)[1]),
+                         [item.model_dump(mode="json") for item in self.tools.describe()])
+        self.assertEqual(self.provider.schemas, [AgentDecision.model_json_schema()] * 2)
+
+    def test_decision_schema_remains_strict_without_normalizing_tags(self):
+        invalid = [{"decision": {"kind": tag}} for tag in ("tool_call", "complete", "Final", " final ", 1, None)]
+        invalid.extend(({"decision": {"name": "get_inventory", "arguments": {"sku": "LAP-1"}}},
+                        {"decision": {"kind": "tool", "name": "get_inventory"}},
+                        {"decision": {"kind": "tool", "arguments": {}}},
+                        {"decision": {"kind": "tool", "name": 123, "arguments": {}}},
+                        {"decision": {"kind": "tool", "name": "get_inventory", "arguments": []}},
+                        {"decision": {"kind": "final", "message": "private-invalid-output"}},
+                        {**FINAL, "message": "private-invalid-output"}))
+        for value in invalid:
+            with self.subTest(value=value), patch.object(self.tools, "invoke", wraps=self.tools.invoke) as invoke:
+                with self.assertRaises(ValidationError):
+                    AgentDecision.model_validate_json(json.dumps(value), strict=True)
+                result = self.run_script([value])
+                self.assertEqual((result.status, result.error), ("FAILED", "INVALID_RESPONSE"))
+                self.assertEqual(len(self.provider.requests), 1)
+                self.assertEqual(invoke.call_count, 1)  # Only the existing case preflight.
+                self.assertEqual(result.history[-1].llm_failure.code, "INVALID_RESPONSE")
+                self.assertFalse(result.actions_executed)
+                self.assertNotIn("private-invalid-output", result.model_dump_json())
+                self.assertEqual(self.proposals.list_for_case(self.case.id), [])
 
     def test_all_read_capabilities_delegate_including_denial_reasons(self):
         result = self.run_script([

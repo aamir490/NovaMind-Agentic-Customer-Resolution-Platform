@@ -29,12 +29,58 @@ ERRORS = frozenset({"UNAUTHENTICATED", "FORBIDDEN", "UNKNOWN_TOOL", "INVALID_INP
     "CONVERSATION_WRITE_FAILED", "CONVERSATION_UNAVAILABLE", "CONVERSATION_NOT_FOUND", "CONVERSATION_CASE_MISMATCH"})
 STATUSES = frozenset({"INFORMATIONAL", "HUMAN_REVIEW_REQUIRED", "FAILED", "REVIEW_REQUIRED", "REVIEWED",
                       "COMPLETED", "PENDING_REVIEW", "APPROVED", "REJECTED"})
+# Never derive these vocabularies from provider output, schema titles, or errors.
+SCHEMA_ERROR_TYPES = frozenset({"missing", "extra_forbidden", "union_tag_invalid", "union_tag_not_found",
+    "literal_error", "string_type", "int_type", "float_type", "bool_type", "dict_type", "list_type",
+    "tuple_type", "model_type", "model_attributes_type", "json_type", "enum", "uuid_type", "uuid_parsing",
+    "string_too_short", "string_too_long", "string_pattern_mismatch", "greater_than", "greater_than_equal",
+    "less_than", "less_than_equal", "too_short", "too_long", "finite_number", "value_error", "assertion_error"})
+SCHEMA_LOCATION_LABELS = frozenset({"decision", "kind", "name", "arguments", "tool", "final"})
+MAX_SCHEMA_ERRORS = 8
+MAX_SCHEMA_LOCATION = 8
 _observer = ContextVar("local_observer", default=None)
 _span = ContextVar("local_span", default=None)
 
 
 def _error(value):
     return value if isinstance(value, str) and value in ERRORS else "ERROR"
+
+
+def _schema_errors(value):
+    """Closed, bounded error shapes; keys, indexes, custom codes and text are untrusted."""
+    if type(value) not in (list, tuple):
+        return []
+    safe = []
+    for item in value[:MAX_SCHEMA_ERRORS]:
+        if type(item) is not dict:
+            continue
+        code = item.get("type")
+        location = item.get("location")
+        path = []
+        if type(location) in (list, tuple):
+            for part in location[:MAX_SCHEMA_LOCATION]:
+                if type(part) is str:
+                    path.append(part if part in SCHEMA_LOCATION_LABELS else "<field>")
+                else:
+                    path.append("<index>" if type(part) is int else "<unknown>")
+            if len(location) > MAX_SCHEMA_LOCATION:
+                path[-1] = "<truncated>"
+        else:
+            path = ["<unknown>"]
+        safe.append({"type": code if type(code) is str and code in SCHEMA_ERROR_TYPES else "other",
+                     "location": path})
+    return safe
+
+
+def annotate_schema_validation(error):
+    """Best-effort local diagnostics; never stringify or retain a validation exception."""
+    try:
+        details = error.errors(include_url=False, include_context=False, include_input=False)
+        annotate(output_schema_errors=[{"type": item.get("type"), "location": item.get("loc")}
+                                       for item in details[:MAX_SCHEMA_ERRORS]],
+                 output_schema_errors_truncated=len(details) > MAX_SCHEMA_ERRORS)
+    except Exception:
+        pass  # Diagnostic extraction must not replace the original safe failure.
 
 
 def _metadata(fields):
@@ -49,9 +95,17 @@ def _metadata(fields):
             safe[key] = str(value)
         elif key == "provider" and value in {"gemini", "fake", "other"}:
             safe[key] = value
+        elif key == "invalid_response_stage" and isinstance(value, str) and value in {
+                "provider_envelope", "json_guardrail", "output_schema"}:
+            # Internal fixed labels only; never include validation errors or inputs.
+            safe[key] = value
+        elif key == "output_schema_errors":
+            safe[key] = _schema_errors(value)
+        elif key == "output_schema_errors_truncated" and type(value) is bool:
+            safe[key] = value
         elif key == "method" and value in {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}:
             safe[key] = value
-        elif key == "status_code" and type(value) is int and 100 <= value <= 599:
+        elif key in {"status_code", "provider_status_code"} and type(value) is int and 100 <= value <= 599:
             safe[key] = value
         elif key in {"input_tokens", "output_tokens", "total_tokens", "output_token_limit"}:
             safe[key] = value if type(value) is int and 0 <= value <= 10**9 else None
