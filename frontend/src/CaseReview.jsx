@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from './api.js';
+import { api as defaultApi } from './api.js';
 
 const denialLabels = {
   item_not_in_order: 'The selected item is not in this order.',
@@ -10,7 +10,7 @@ const denialLabels = {
 };
 const label = (value) => value.replaceAll('_', ' ');
 
-export default function CaseReview() {
+export default function CaseReview({ api = defaultApi }) {
   const [cases, setCases] = useState(null);
   const [selected, setSelected] = useState('');
   const [context, setContext] = useState(null);
@@ -41,12 +41,17 @@ export default function CaseReview() {
 
   return (
     <section className="review" aria-labelledby="review-title" aria-busy={busy}>
-      <h2 id="review-title">Review a local support case</h2>
-      <p>Read-only review. No case updates, stock reservations, refunds, or approvals are performed.</p>
-      <button disabled={busy} onClick={() => {
-        clearReview(); setSelected(''); setCases(null);
-        run(async () => setCases(await api.listCases()));
-      }}>Refresh cases</button>
+      <div className="review-heading">
+        <div>
+          <p className="eyebrow">Case workspace</p>
+          <h2 id="review-title" tabIndex={-1}>Review a support case</h2>
+        </div>
+        <button disabled={busy} onClick={() => {
+          clearReview(); setSelected(''); setCases(null);
+          run(async () => setCases(await api.listCases()));
+        }}>Refresh cases</button>
+      </div>
+      <p className="review-description">Read-only review. No case updates, stock reservations, refunds, or approvals are performed.</p>
       {cases?.length === 0 && <p role="status">No cases found. Create synthetic records using the Phase 1 API walkthrough, then refresh. Restarting the backend clears its data.</p>}
       {!!cases?.length && <form onSubmit={(event) => {
         event.preventDefault(); clearReview();
