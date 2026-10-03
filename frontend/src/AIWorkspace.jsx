@@ -146,6 +146,9 @@ export default function AIWorkspace({ api, identity }) {
 
   const snapshot = tracking?.snapshot ?? attempt?.snapshot;
   const toolEvents = tracking?.events.filter((event) => event.kind === 'TOOL') ?? [];
+  const review = snapshot?.review;
+  const proposalReferences = [...new Set(toolEvents.map((event) => event.proposal_id).filter(Boolean))]
+    .filter((id) => id !== review?.proposal_id);
   return <div className="ai-workspace">
     <form className="case-panel" aria-labelledby="run-request-title" onSubmit={startRun}>
       <div className="case-panel-heading">
@@ -206,10 +209,53 @@ export default function AIWorkspace({ api, identity }) {
           <div><dt>Created at (server)</dt><dd><time dateTime={snapshot.created_at}>{snapshot.created_at}</time></dd></div>
           <div><dt>Updated at (server)</dt><dd><time dateTime={snapshot.updated_at}>{snapshot.updated_at}</time></dd></div>
           {snapshot.trace_id && <div><dt>Trace ID</dt><dd>{snapshot.trace_id}</dd></div>}
-          <div><dt>Actions executed</dt><dd>{snapshot.actions_executed ? 'Yes' : 'No'}</dd></div>
         </dl>
-        {snapshot.message && <p className="run-message">{snapshot.message}</p>}
-        {snapshot.error && <p className="run-error" role="alert">Backend error: {snapshot.error}</p>}
+        <section className="run-event-section response-proposal" aria-labelledby="response-proposal-title">
+          <h3 id="response-proposal-title">Response &amp; Proposal</h3>
+          <p className="case-caption">Details from the last confirmed backend snapshot and received events.</p>
+          <div className="resolution-card">
+            <h4>AI response</h4>
+            <p className="case-caption">{snapshot.status === 'COMPLETED' ? 'Final customer-facing response' : 'Last returned customer-facing message'}</p>
+            {snapshot.message ? <p className="run-message">{snapshot.message}</p>
+              : <p className="case-caption">No customer-facing response has been returned yet.</p>}
+          </div>
+          <div className="resolution-card">
+            <h4>Proposed action</h4>
+            {review ? <>
+              <p className="proposal-action">{review.action}</p>
+              <dl className="case-facts run-identifiers">
+                <div><dt>Proposal ID</dt><dd>{review.proposal_id}</dd></div>
+              </dl>
+              <p className="eyebrow">Proposal rationale</p>
+              <p className="run-message">{review.rationale}</p>
+            </> : <p className="case-caption">No proposed action details have been returned.</p>}
+            {proposalReferences.length > 0 && <>
+              <p className="case-caption">Proposal references reported by tool events; action and review details are not available for these references.</p>
+              <ul className="proposal-references">{proposalReferences.map((id) => <li key={id}><code>{id}</code></li>)}</ul>
+            </>}
+            {(tracking?.gap || tracking?.trimmed) && <p className="case-caption">Event history is incomplete; earlier proposal references may be missing.</p>}
+          </div>
+          <div className="resolution-card">
+            <h4>Human review</h4>
+            {snapshot.status === 'REVIEW_REQUIRED' && <p className="run-notice">The backend reports that human review is required.</p>}
+            {snapshot.status === 'REVIEWED' && <p className="case-caption">The backend reports that human review was recorded.</p>}
+            {review || snapshot.reviewed_status ? <dl className="case-facts">
+              {review && <>
+                <div><dt>Review request status (when issued)</dt><dd>{review.status}</dd></div>
+                <div><dt>Review ID</dt><dd><code>{review.review_id}</code></dd></div>
+              </>}
+              <div><dt>Recorded review outcome</dt><dd>{snapshot.reviewed_status ?? 'Not reported'}</dd></div>
+            </dl> : <p className="case-caption">No review request details or decision have been returned.</p>}
+            <p className="case-caption">A proposed action or an approval does not mean an action was executed.</p>
+          </div>
+          <div className="resolution-card">
+            <h4>Action &amp; error state</h4>
+            {snapshot.actions_executed === false && <p className="run-notice">No business action was executed.</p>}
+            {snapshot.status === 'FAILED' && <p className="run-error">The run has failed.</p>}
+            {snapshot.error ? <p className="run-error" role="alert">Backend error: {snapshot.error}</p>
+              : <p className="case-caption">No backend error is reported in this snapshot.</p>}
+          </div>
+        </section>
         <section className="run-event-section tool-activity" aria-labelledby="tool-activity-title">
           <div className="tool-activity-heading">
             <h3 id="tool-activity-title">Tool Activity</h3>

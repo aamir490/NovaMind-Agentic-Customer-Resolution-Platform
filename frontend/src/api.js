@@ -22,11 +22,21 @@ function runSnapshot(result, { instance_id, case_id, run_id }) {
     && isOptionalUuid(result.workflow_id) && isOptionalUuid(result.conversation_id) && isOptionalUuid(result.trace_id)
     && isTimestamp(result.created_at) && isTimestamp(result.updated_at)
     && isCount(result.last_sequence) && isOptionalText(result.message) && isOptionalText(result.error), 'run snapshot');
+  requireResponse(result.reviewed_status === null || ['APPROVED', 'REJECTED'].includes(result.reviewed_status), 'review outcome');
+  const review = result.review;
+  requireResponse(review === null || (review && isUuid(review.workflow_id) && review.workflow_id === result.workflow_id
+    && review.case_id === case_id && isUuid(review.proposal_id) && isUuid(review.review_id)
+    && ['return', 'refund', 'replacement'].includes(review.action) && review.status === 'PENDING_REVIEW'
+    && isText(review.rationale) && review.rationale.length <= 4000), 'run review');
   // Explicit display projection; no raw workflow state or unrestricted response dump.
   return { instance_id: result.instance_id, run_id: result.run_id, case_id: result.case_id,
     workflow_id: result.workflow_id, conversation_id: result.conversation_id, trace_id: result.trace_id,
     provider: result.provider, status: result.status, created_at: result.created_at, updated_at: result.updated_at,
     last_sequence: result.last_sequence, message: result.message, error: result.error,
+    review: review === null ? null : { workflow_id: review.workflow_id, case_id: review.case_id,
+      proposal_id: review.proposal_id, review_id: review.review_id, action: review.action,
+      rationale: review.rationale, status: review.status },
+    reviewed_status: result.reviewed_status,
     actions_executed: result.actions_executed };
 }
 
@@ -101,9 +111,10 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
           && event.sequence <= snapshot.last_sequence && isTimestamp(event.timestamp)
           && ['STATE', 'NODE', 'TOOL'].includes(event.kind) && eventStates.includes(event.state)
           && (event.node === null || eventNodes.includes(event.node)) && isOptionalText(event.tool)
-          && (event.ok === null || typeof event.ok === 'boolean') && isOptionalText(event.error), 'run event');
+          && (event.ok === null || typeof event.ok === 'boolean') && isOptionalText(event.error)
+          && isOptionalUuid(event.proposal_id), 'run event');
         return { sequence: event.sequence, timestamp: event.timestamp, kind: event.kind, state: event.state,
-          node: event.node, tool: event.tool, ok: event.ok, error: event.error };
+          node: event.node, tool: event.tool, ok: event.ok, error: event.error, proposal_id: event.proposal_id };
       });
       requireResponse(page.next_after === (events.at(-1)?.sequence ?? after)
         && (!page.has_more || events.length > 0), 'run event cursor');
