@@ -14,7 +14,7 @@ const views = [
     description: 'Customer context, policy, and eligibility. One place to review the details.',
     icon: 'M4 5h16v15H4zM9 5V3h6v2M8 10h8M8 14h5' },
   { id: 'ai-workspace', label: 'AI Workspace', title: 'AI Workspace',
-    description: 'Submit a case-bound request and inspect the returned run snapshot.',
+    description: 'Submit a case-bound request and follow its status and workflow events.',
     icon: 'M5 4h14v12H9l-4 4zM8 8h8M8 12h5' },
   { id: 'reviews', label: 'Reviews', title: 'Reviews',
     description: 'A place for human review.',
@@ -183,7 +183,7 @@ function App() {
               <h1 aria-live="polite">{view.title}</h1>
               <p className="intro">{view.description}</p>
             </div>
-            <span className="badge">{activeView === 'cases' ? 'Read-only workspace' : activeView === 'ai-workspace' ? 'Run submission' : 'Placeholder view'}</span>
+            <span className="badge">{activeView === 'cases' ? 'Read-only workspace' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
           </div>
           {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
             <p className="eyebrow">{view.label}</p>

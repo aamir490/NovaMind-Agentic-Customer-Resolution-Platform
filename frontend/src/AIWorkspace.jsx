@@ -6,6 +6,15 @@ const rejectedMessages = {
   RUN_RETENTION_FULL: 'The service has reached its run limit. No run was started.',
   CONVERSATION_UNAVAILABLE: 'Conversation storage is unavailable. No run was started.',
 };
+const activeRunStatuses = new Set(['RUNNING', 'RESUMING']);
+const maxDisplayedEvents = 256;
+
+function trackingError(error) {
+  if (error.status === 403) return 'Access to this run was denied. Live tracking has stopped.';
+  if (error.status === 404) return 'This run is no longer available. It may have been lost after a server restart. Do not resubmit automatically.';
+  if (error.status === 409) return 'The run or event cursor is no longer valid. Tracking has stopped; inspect existing records before submitting again.';
+  return 'Live updates could not be verified. The last confirmed status and events are shown. This does not cancel the run.';
+}
 
 export default function AIWorkspace({ api, identity }) {
   const [cases, setCases] = useState(null);
@@ -14,6 +23,9 @@ export default function AIWorkspace({ api, identity }) {
   const [loadingCases, setLoadingCases] = useState(false);
   const [caseError, setCaseError] = useState('');
   const [attempt, setAttempt] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [trackingRetry, setTrackingRetry] = useState(0);
+  const lastTracking = useRef(null);
   const mounted = useRef(false);
   const caseRequest = useRef(false);
   const submitted = useRef(false);
@@ -23,6 +35,63 @@ export default function AIWorkspace({ api, identity }) {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+
+  useEffect(() => {
+    if (!api || attempt?.state !== 'accepted') return;
+    const binding = attempt.snapshot;
+    const controller = new AbortController();
+    const { signal } = controller;
+    let timer;
+    let current = lastTracking.current?.snapshot.run_id === binding.run_id ? lastTracking.current
+      : { snapshot: binding, events: [], after: 0, gap: false, trimmed: false };
+
+    function publish(changes) {
+      if (signal.aborted) return;
+      current = { ...current, ...changes };
+      lastTracking.current = current;
+      setTracking(current);
+    }
+
+    function checkSnapshot(snapshot) {
+      if (snapshot.last_sequence < current.snapshot.last_sequence
+          || Date.parse(snapshot.updated_at) < Date.parse(current.snapshot.updated_at)) {
+        throw new Error('Stale run snapshot');
+      }
+    }
+
+    async function poll() {
+      try {
+        const snapshot = await api.runSnapshot(binding, { signal });
+        if (signal.aborted) return;
+        checkSnapshot(snapshot);
+        publish({ snapshot });
+        let page;
+        do {
+          page = await api.runEvents(binding, current.after, { signal });
+          if (signal.aborted) return;
+          checkSnapshot(page.snapshot);
+          // The API validator enforces contiguous, increasing sequences after
+          // this cursor, except for explicitly reported retention gaps.
+          const events = [...current.events, ...page.events];
+          publish({ snapshot: page.snapshot, after: page.next_after,
+            events: events.slice(-maxDisplayedEvents), gap: current.gap || page.gap,
+            trimmed: current.trimmed || events.length > maxDisplayedEvents });
+        } while (page.has_more);
+        // Drain available history before stopping at terminal/review states.
+        // Scheduling after completion prevents overlapping requests.
+        if (activeRunStatuses.has(current.snapshot.status)) timer = setTimeout(poll, 1500);
+        else publish({ phase: 'stopped' });
+      } catch (error) {
+        if (signal.aborted) return;
+        publish({ phase: 'error', error: trackingError(error),
+          canRetry: ![401, 403, 404, 409].includes(error.status) });
+      }
+    }
+
+    publish({ phase: 'polling', error: '', canRetry: false });
+    poll();
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [api, attempt, trackingRetry]);
 
   async function loadCases() {
     if (!api || caseRequest.current || submitted.current) return;
@@ -75,7 +144,7 @@ export default function AIWorkspace({ api, identity }) {
     <p>Use the existing token form above. Case access and run permissions are checked by the backend.</p>
   </section>;
 
-  const snapshot = attempt?.snapshot;
+  const snapshot = tracking?.snapshot ?? attempt?.snapshot;
   return <div className="ai-workspace">
     <form className="case-panel" aria-labelledby="run-request-title" onSubmit={startRun}>
       <div className="case-panel-heading">
@@ -106,7 +175,7 @@ export default function AIWorkspace({ api, identity }) {
 
     <section className="case-panel" aria-labelledby="run-snapshot-title">
       <div className="case-panel-heading">
-        <div><p className="eyebrow">Server response</p><h2 id="run-snapshot-title">Returned run snapshot</h2></div>
+        <div><p className="eyebrow">Live workflow</p><h2 id="run-snapshot-title">Run status and events</h2></div>
         {snapshot && <span className="case-status">{snapshot.status}</span>}
       </div>
       {!attempt && <p className="case-caption">No run has been submitted from this workspace.</p>}
@@ -118,7 +187,16 @@ export default function AIWorkspace({ api, identity }) {
         <div><dt>Server instance ID</dt><dd>{attempt.body.instance_id}</dd></div>
       </dl>}
       {snapshot && <>
-        <p className="run-notice" role="status">Returned status: {snapshot.status}. This snapshot is from the start response and does not refresh automatically.</p>
+        <p className="run-notice" role="status">Last confirmed status: {snapshot.status}.{' '}
+          {tracking?.phase === 'error' ? 'Live updates are stopped.'
+            : tracking?.phase === 'stopped'
+              ? snapshot.status === 'REVIEW_REQUIRED' ? 'Waiting for human review. Automatic tracking has stopped.'
+                : 'Automatic tracking has stopped for this status.'
+              : 'Checking the backend for status and workflow events.'}
+        </p>
+        {tracking?.error && <p className="run-error" role="alert">{tracking.error}</p>}
+        {tracking?.canRetry && <button type="button" className="button-secondary"
+          onClick={() => setTrackingRetry((value) => value + 1)}>Retry live tracking</button>}
         <dl className="case-facts run-identifiers">
           <div><dt>Run ID</dt><dd>{snapshot.run_id}</dd></div>
           {snapshot.workflow_id && <div><dt>Workflow ID</dt><dd>{snapshot.workflow_id}</dd></div>}
@@ -131,7 +209,26 @@ export default function AIWorkspace({ api, identity }) {
         </dl>
         {snapshot.message && <p className="run-message">{snapshot.message}</p>}
         {snapshot.error && <p className="run-error" role="alert">Backend error: {snapshot.error}</p>}
-        <p className="run-footnote">No polling or live progress is shown. Approval does not execute an action.</p>
+        <section className="run-event-section" aria-labelledby="run-events-title">
+          <h3 id="run-events-title">Workflow events</h3>
+          {tracking?.gap && <p className="run-notice">Some events are no longer retained by the backend. This history has a gap.</p>}
+          {tracking?.trimmed && <p className="case-caption">Showing the latest {maxDisplayedEvents} received events.</p>}
+          {!tracking?.events.length && <p className="case-caption">No workflow events have been loaded yet.</p>}
+          {tracking?.events.length > 0 && <ol className="run-events" aria-label="Workflow events in sequence order">
+            {tracking.events.map((event) => <li key={event.sequence}>
+              <div className="run-event-heading">
+                <strong>#{event.sequence} {event.kind === 'STATE' ? 'Run status'
+                  : event.kind === 'NODE' ? (event.node?.replaceAll('_', ' ') ?? 'Workflow node')
+                    : (event.tool ?? 'Tool')}</strong>
+                <span className="badge">{event.state}</span>
+              </div>
+              <time dateTime={event.timestamp}>{event.timestamp}</time>
+              {event.ok !== null && <p className="case-caption">{event.ok ? 'Tool succeeded' : 'Tool failed'}</p>}
+              {event.error && <p className="run-error">Backend error: {event.error}</p>}
+            </li>)}
+          </ol>}
+        </section>
+        <p className="run-footnote">Only backend-reported status and events are shown. Retrying tracking reads this run without submitting another request. Approval does not execute an action.</p>
       </>}
     </section>
   </div>;
