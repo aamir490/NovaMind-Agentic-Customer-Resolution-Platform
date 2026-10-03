@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api as defaultApi } from './api.js';
 
 const denialLabels = {
@@ -9,6 +9,12 @@ const denialLabels = {
   change_of_mind_requires_unused: 'Change-of-mind returns require unused condition.',
 };
 const label = (value) => value.replaceAll('_', ' ');
+const loadingMessages = {
+  cases: 'Loading available support cases…',
+  context: 'Loading case, customer, and order details…',
+  item: 'Loading inventory and applicable policy…',
+  assessment: 'Checking eligibility with the backend…',
+};
 
 function Detail({ title, children }) {
   return <div><dt>{title}</dt><dd>{children}</dd></div>;
@@ -34,25 +40,47 @@ export default function CaseReview({ api = defaultApi }) {
   const [sku, setSku] = useState('');
   const [inputs, setInputs] = useState({ quantity: '1', days_since_delivery: '', reason: '', condition: '' });
   const [result, setResult] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [pending, setPending] = useState(null);
+  const [failure, setFailure] = useState(null);
+  const requestVersion = useRef(0);
+  const busy = pending !== null;
+  const error = failure?.message || '';
 
-  async function run(action) {
-    setBusy(true);
-    setError('');
-    try { await action(); }
-    catch (failure) { setError(`${failure.message || 'Request failed'}. Check the local backend and retry.`); }
-    finally { setBusy(false); }
+  useEffect(() => () => { requestVersion.current += 1; }, [api]);
+
+  async function run(stage, request, applyResult) {
+    const version = ++requestVersion.current;
+    setPending(stage);
+    setFailure(null);
+    try {
+      const data = await request();
+      if (version === requestVersion.current) applyResult(data);
+    } catch (cause) {
+      if (version === requestVersion.current) {
+        setFailure({ stage, message: `${cause.message || 'Request failed'}. Check the local backend and retry.` });
+      }
+    } finally {
+      if (version === requestVersion.current) setPending(null);
+    }
   }
 
   function clearReview() {
+    requestVersion.current += 1;
+    setPending(null); setFailure(null);
     setContext(null); setItem(null); setSku(''); setResult(null);
     setInputs({ quantity: '1', days_since_delivery: '', reason: '', condition: '' });
   }
 
   function edit(name, value) {
+    requestVersion.current += 1;
+    setPending(null);
     setInputs((previous) => ({ ...previous, [name]: value }));
-    setResult(null); setError('');
+    setResult(null); setFailure(null);
+  }
+
+  function loadItem(nextSku) {
+    setItem(null); setResult(null);
+    run('item', () => api.item(nextSku), setItem);
   }
 
   return (
@@ -67,17 +95,17 @@ export default function CaseReview({ api = defaultApi }) {
             {cases !== null && <span className="case-count">{cases.length} {cases.length === 1 ? 'case' : 'cases'} loaded</span>}
             <button className="button-secondary" disabled={busy} onClick={() => {
               clearReview(); setSelected(''); setCases(null);
-              run(async () => setCases(await api.listCases()));
+              run('cases', () => api.listCases(), setCases);
             }}>Refresh cases</button>
           </div>
         </div>
         {!!cases?.length && <form className="case-selector-form" onSubmit={(event) => {
           event.preventDefault(); clearReview();
-          run(async () => setContext(await api.context(selected)));
+          run('context', () => api.context(selected), setContext);
         }}>
           <fieldset disabled={busy}>
             <label>Support case<select required value={selected} onChange={(event) => {
-              setSelected(event.target.value); clearReview(); setError('');
+              setSelected(event.target.value); clearReview();
             }}><option value="">Choose a case</option>{cases.map((entry) =>
               <option key={entry.id} value={entry.id}>{entry.subject} — {entry.id}</option>,
             )}</select></label>
@@ -87,7 +115,7 @@ export default function CaseReview({ api = defaultApi }) {
         <p className="review-description">Read-only review. No case updates, stock reservations, refunds, or approvals are performed.</p>
       </div>
 
-      {busy && <p className="case-notice" role="status">Loading local API data…</p>}
+      {busy && <p className="case-notice" role="status">{loadingMessages[pending]}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {!context && !busy && !error && <div className="case-panel case-start" role="status">
         {cases === null ? <EmptyPanel title="Start with a support case">
@@ -134,9 +162,11 @@ export default function CaseReview({ api = defaultApi }) {
               )}</ul>
               <label className="case-item-select">Item to review<select disabled={busy} value={sku} onChange={(event) => {
                 const next = event.target.value;
-                setSku(next); setItem(null); setResult(null); setError('');
+                requestVersion.current += 1;
+                setPending(null); setFailure(null);
+                setSku(next); setItem(null); setResult(null);
                 setInputs({ quantity: '1', days_since_delivery: '', reason: '', condition: '' });
-                if (next) run(async () => setItem(await api.item(next)));
+                if (next) loadItem(next);
               }}><option value="">Choose an item</option>{[...new Set(context.order.items.map((entry) => entry.sku))].map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
             </div>
           </section>
@@ -159,18 +189,20 @@ export default function CaseReview({ api = defaultApi }) {
                 <Detail title="Verified return required for refund">{item.policy.refund_requires_return ? 'Yes' : 'No'}</Detail>
               </dl>
               <p className="case-caption case-policy-description">{item.policy.description}</p>
-            </> : <EmptyPanel title={busy ? 'Loading item details' : error ? 'Item details unavailable' : 'Select an item'}>
-              {busy ? 'Waiting for the requested data.' : error ? 'Check the error above before retrying.' : 'Choose an ordered item to view its inventory and applicable policy.'}
+            </> : <EmptyPanel title={pending === 'item' ? 'Loading item details' : failure?.stage === 'item' ? 'Item details unavailable' : 'Select an item'}>
+              {pending === 'item' ? 'Waiting for inventory and policy from the backend.' : failure?.stage === 'item' ? 'Check the error above before retrying.' : 'Choose an ordered item to view its inventory and applicable policy.'}
             </EmptyPanel>}
+            {failure?.stage === 'item' && sku && <button type="button" className="button-secondary" disabled={busy}
+              onClick={() => loadItem(sku)}>Retry item details</button>}
           </section>
         </div>
 
         {item && <div className="case-assessment-grid">
           <form className="case-panel" aria-labelledby="assessment-inputs-title" onSubmit={(event) => {
             event.preventDefault(); setResult(null);
-            run(async () => setResult(await api.eligibility(context.order.id, {
+            run('assessment', () => api.eligibility(context.order.id, {
               customer_id: context.customer.id, sku, ...inputs,
-            })));
+            }), setResult);
           }}>
             <div className="case-panel-heading">
               <div><p className="eyebrow">Assessment inputs</p><h3 id="assessment-inputs-title">Assessment assumptions</h3></div>
@@ -210,8 +242,8 @@ export default function CaseReview({ api = defaultApi }) {
                 <Detail title="Refund requires verified return">{result.refund_requires_return ? 'Yes' : 'No'}</Detail>
                 <Detail title="Authorization granted">{result.authorization_granted ? 'Yes' : 'No'}</Detail>
               </dl>
-            </div> : <EmptyPanel title={busy ? 'Assessment in progress' : error ? 'Assessment unavailable' : 'No assessment yet'}>
-              {busy ? 'Waiting for the backend eligibility result.' : error ? 'Check the error above before retrying.' : 'Enter the scenario inputs and check eligibility to see the backend result here.'}
+            </div> : <EmptyPanel title={pending === 'assessment' ? 'Assessment in progress' : failure?.stage === 'assessment' ? 'Assessment unavailable' : 'No assessment yet'}>
+              {pending === 'assessment' ? 'Waiting for the backend eligibility result.' : failure?.stage === 'assessment' ? 'Check the error above before retrying.' : 'Enter the scenario inputs and check eligibility to see the backend result here.'}
             </EmptyPanel>}
           </section>
         </div>}
