@@ -145,6 +145,7 @@ export default function AIWorkspace({ api, identity }) {
   </section>;
 
   const snapshot = tracking?.snapshot ?? attempt?.snapshot;
+  const toolEvents = tracking?.events.filter((event) => event.kind === 'TOOL') ?? [];
   return <div className="ai-workspace">
     <form className="case-panel" aria-labelledby="run-request-title" onSubmit={startRun}>
       <div className="case-panel-heading">
@@ -209,6 +210,33 @@ export default function AIWorkspace({ api, identity }) {
         </dl>
         {snapshot.message && <p className="run-message">{snapshot.message}</p>}
         {snapshot.error && <p className="run-error" role="alert">Backend error: {snapshot.error}</p>}
+        <section className="run-event-section tool-activity" aria-labelledby="tool-activity-title">
+          <div className="tool-activity-heading">
+            <h3 id="tool-activity-title">Tool Activity</h3>
+            <span className="badge">{toolEvents.length} retained events</span>
+          </div>
+          {(tracking?.gap || tracking?.trimmed) && <p className="case-caption">This section reflects retained workflow events. Earlier tool activity may be missing.</p>}
+          {toolEvents.length === 0 ? <p className="case-caption">No tool activity has been received for this run.</p>
+            : <ol className="tool-activity-list" aria-label="Tool activity in sequence order" tabIndex={0}>
+              {toolEvents.map((event) => {
+                const outcome = event.ok === true ? 'success' : event.ok === false ? 'failure' : 'unknown';
+                return <li key={event.sequence} className={`tool-activity-item ${outcome}`}>
+                  <div className="tool-activity-card">
+                    <div className="tool-activity-heading">
+                      <strong className="tool-activity-name">{event.tool || 'Tool name unavailable'}</strong>
+                      <span className="tool-activity-outcome">{event.ok === true ? 'Succeeded'
+                        : event.ok === false ? 'Failed' : 'Outcome not reported'}</span>
+                    </div>
+                    <div className="tool-activity-meta">
+                      <span>Sequence #{event.sequence}</span>
+                      <span>Status: {event.state}</span>
+                    </div>
+                    <time dateTime={event.timestamp}>{event.timestamp}</time>
+                  </div>
+                </li>;
+              })}
+            </ol>}
+        </section>
         <section className="run-event-section" aria-labelledby="run-events-title">
           <h3 id="run-events-title">Workflow events</h3>
           {tracking?.gap && <p className="run-notice">Some events are no longer retained by the backend. This history has a gap.</p>}
