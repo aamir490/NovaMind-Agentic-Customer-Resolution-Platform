@@ -1,5 +1,7 @@
 ﻿import { useCallback, useEffect, useState } from 'react';
 
+import AuditTimeline from './AuditTimeline.jsx';
+
 const date = (value) => new Date(value).toLocaleString();
 
 function failure(error) {
@@ -54,27 +56,13 @@ function AuditEventPage({ api, binding, onDenied, after, previous, next }) {
   const state = useAuditRead(load, onDenied);
   return <section className="case-panel" aria-labelledby="audit-events-title" aria-busy={state.phase === 'loading'}>
     <div className="case-panel-heading">
-      <div><p className="eyebrow">Workflow history</p><h3 id="audit-events-title">Audit metadata</h3></div>
+      <div><p className="eyebrow">Workflow history</p><h3 id="audit-events-title">Run audit timeline</h3></div>
       <button className="button-secondary" onClick={state.refresh} disabled={state.phase === 'loading'}>Refresh audit page</button>
     </div>
     <p className="case-caption">Run <code>{binding.run_id}</code></p>
-    <ReadStatus state={state} loading="Loading audit metadata..." />
+    <ReadStatus state={state} loading="Loading audit timeline..." />
     {state.data && <>
-      {state.data.events.length === 0 ? <p role="status" className="run-notice">{after === 0
-        ? 'No audit records are available for this run.' : 'No further audit records are available.'}</p>
-        : <ol className="audit-events" aria-label="Audit records" tabIndex={0}>
-          {state.data.events.map((event) => <li key={event.sequence} className="resolution-card">
-            <div className="run-event-heading"><strong>#{event.sequence} · {event.kind.replaceAll('_', ' ')}</strong>
-              <time dateTime={event.timestamp}>{date(event.timestamp)}</time></div>
-            <dl className="case-facts">
-              {event.tool !== null && <div><dt>Tool</dt><dd>{event.tool}</dd></div>}
-              {event.proposal_status !== null && <div><dt>Recorded proposal status</dt><dd>{event.proposal_status}</dd></div>}
-              {event.proposal_id !== null && <div><dt>Proposal ID</dt><dd><code>{event.proposal_id}</code></dd></div>}
-              {event.reviewer_user_id !== null && <div><dt>Reviewer user ID</dt><dd><code>{event.reviewer_user_id}</code></dd></div>}
-              {event.error !== null && <div><dt>Error code</dt><dd>{event.error}</dd></div>}
-            </dl>
-          </li>)}
-        </ol>}
+      <AuditTimeline events={state.data.events} after={after} hasMore={state.data.has_more} />
       <p className="case-caption" role="status">{state.data.events.length} {state.data.events.length === 1 ? 'record' : 'records'} on this page. {state.data.has_more ? 'More records are available.' : 'End of the available audit history.'}</p>
     </>}
     <div className="audit-pagination">
