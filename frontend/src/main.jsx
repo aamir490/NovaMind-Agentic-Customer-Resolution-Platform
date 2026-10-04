@@ -5,6 +5,7 @@ import CaseReview from './CaseReview.jsx';
 import AIWorkspace from './AIWorkspace.jsx';
 import ReviewQueue from './ReviewQueue.jsx';
 import AuditWorkspace from './AuditWorkspace.jsx';
+import DiagnosticsWorkspace from './DiagnosticsWorkspace.jsx';
 import { createApi } from './api.js';
 
 const views = [
@@ -24,6 +25,9 @@ const views = [
   { id: 'audit', label: 'Audit', title: 'Audit',
     description: 'Inspect safe workflow and human review metadata for an existing run.',
     icon: 'M5 3h10l4 4v14H5zM14 3v5h5M9 12h6M9 16h6' },
+  { id: 'diagnostics', label: 'Diagnostics', title: 'Diagnostics',
+    description: 'Inspect recorded operational metrics and recent trace metadata.',
+    icon: 'M3 12h4l3-7 4 14 3-7h4' },
 ];
 
 function App() {
@@ -183,7 +187,7 @@ function App() {
               <h1 aria-live="polite">{view.title}</h1>
               <p className="intro">{view.description}</p>
             </div>
-            <span className="badge">{['cases', 'audit'].includes(activeView) ? 'Read-only workspace' : activeView === 'reviews' ? 'Human review' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
+            <span className="badge">{['cases', 'audit', 'diagnostics'].includes(activeView) ? 'Read-only workspace' : activeView === 'reviews' ? 'Human review' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
           </div>
           {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
             <p className="eyebrow">{view.label}</p>
@@ -197,6 +201,7 @@ function App() {
             <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity} active={activeView === 'reviews'} />
           </div>
           {activeView === 'audit' && <AuditWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
+          {activeView === 'diagnostics' && <DiagnosticsWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
           {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
           <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
             <CaseReview key={sessionVersion} api={session?.api} />

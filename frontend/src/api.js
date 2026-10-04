@@ -1,4 +1,5 @@
 import { auditBinding, auditCases, auditRuns, auditPage } from './auditContracts.js';
+import { diagnosticsSnapshot } from './diagnosticsContracts.js';
 
 // Same-origin authenticated reads, explicit run starts, and explicit human decisions.
 const isText = (value) => typeof value === 'string' && value.trim().length > 0;
@@ -186,6 +187,9 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
       requireResponse(page.next_after === (events.at(-1)?.sequence ?? after)
         && (!page.has_more || events.length > 0), 'run event cursor');
       return { snapshot, events, next_after: page.next_after, has_more: page.has_more, gap: page.gap };
+    },
+    async diagnostics(options) {
+      return diagnosticsSnapshot(await get('/diagnostics?limit=50', options));
     },
     async auditCases(options) {
       return auditCases(await get('/cases', options));

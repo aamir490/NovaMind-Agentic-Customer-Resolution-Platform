@@ -1,6 +1,7 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AuditTimeline from './AuditTimeline.jsx';
+import useMetadataRead from './useMetadataRead.js';
 
 const date = (value) => new Date(value).toLocaleString();
 
@@ -16,24 +17,13 @@ function failure(error) {
 // Each selection owns a cancellable request. Keyed children drop old results on
 // case/run/page changes; unmounting or signing out aborts in-flight reads.
 function useAuditRead(load, onDenied) {
-  const [revision, setRevision] = useState(0);
-  const [state, setState] = useState({ phase: 'loading', data: null });
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ phase: 'loading', data: null });
-    load(controller.signal).then((data) => {
-      if (!controller.signal.aborted) setState({ phase: 'ready', data });
-    }).catch((error) => {
-      if (controller.signal.aborted) return;
-      if ([401, 403].includes(error.status)) onDenied(true);
-      setState({ phase: 'error', data: null, message: failure(error) });
-    });
-    return () => controller.abort();
-  }, [load, onDenied, revision]);
-  return { ...state, refresh() {
-    setState({ phase: 'loading', data: null });
-    setRevision((value) => value + 1);
-  } };
+  return useMetadataRead(load, onDenied, failure);
+}
+
+function usePageHeading(focusHeading) {
+  const heading = useRef(null);
+  useEffect(() => { if (focusHeading) heading.current?.focus(); }, [focusHeading]);
+  return heading;
 }
 
 function ReadStatus({ state, loading }) {
@@ -45,18 +35,20 @@ function ReadStatus({ state, loading }) {
 
 function AuditEvents({ api, binding, onDenied }) {
   const [cursors, setCursors] = useState([0]);
+  const [focusHeading, setFocusHeading] = useState(false);
   const after = cursors.at(-1);
-  return <AuditEventPage key={after} api={api} binding={binding} onDenied={onDenied} after={after}
-    previous={cursors.length > 1 ? () => setCursors((values) => values.slice(0, -1)) : null}
-    next={(cursor) => setCursors((values) => [...values, cursor])} />;
+  return <AuditEventPage key={after} api={api} binding={binding} onDenied={onDenied} after={after} focusHeading={focusHeading}
+    previous={cursors.length > 1 ? () => { setFocusHeading(true); setCursors((values) => values.slice(0, -1)); } : null}
+    next={(cursor) => { setFocusHeading(true); setCursors((values) => [...values, cursor]); }} />;
 }
 
-function AuditEventPage({ api, binding, onDenied, after, previous, next }) {
+function AuditEventPage({ api, binding, onDenied, after, previous, next, focusHeading }) {
   const load = useCallback((signal) => api.runAudit(binding, after, { signal }), [api, binding, after]);
   const state = useAuditRead(load, onDenied);
+  const heading = usePageHeading(focusHeading);
   return <section className="case-panel" aria-labelledby="audit-events-title" aria-busy={state.phase === 'loading'}>
     <div className="case-panel-heading">
-      <div><p className="eyebrow">Workflow history</p><h3 id="audit-events-title">Run audit timeline</h3></div>
+      <div><p className="eyebrow">Workflow history</p><h3 id="audit-events-title" ref={heading} tabIndex={-1}>Run audit timeline</h3></div>
       <button className="button-secondary" onClick={state.refresh} disabled={state.phase === 'loading'}>Refresh audit page</button>
     </div>
     <p className="case-caption">Run <code>{binding.run_id}</code></p>
@@ -72,15 +64,16 @@ function AuditEventPage({ api, binding, onDenied, after, previous, next }) {
   </section>;
 }
 
-function RunPage({ api, instanceId, caseId, offset, onDenied, previous, next }) {
+function RunPage({ api, instanceId, caseId, offset, onDenied, previous, next, focusHeading }) {
   const load = useCallback((signal) => api.auditRuns({ instance_id: instanceId, case_id: caseId }, offset, { signal }),
     [api, instanceId, caseId, offset]);
   const state = useAuditRead(load, onDenied);
   const [selected, setSelected] = useState(null);
+  const heading = usePageHeading(focusHeading);
   function refresh() { setSelected(null); state.refresh(); }
   return <>
     <section className="case-panel" aria-labelledby="audit-runs-title" aria-busy={state.phase === 'loading'}>
-      <div className="case-panel-heading"><div><p className="eyebrow">Select a run</p><h3 id="audit-runs-title">Case runs</h3></div>
+      <div className="case-panel-heading"><div><p className="eyebrow">Select a run</p><h3 id="audit-runs-title" ref={heading} tabIndex={-1}>Case runs</h3></div>
         <button className="button-secondary" onClick={refresh} disabled={state.phase === 'loading'}>Refresh run page</button></div>
       <ReadStatus state={state} loading="Loading case runs..." />
       {state.data && <>
@@ -115,8 +108,10 @@ function RunPage({ api, instanceId, caseId, offset, onDenied, previous, next }) 
 
 function CaseRuns({ api, instanceId, caseId, onDenied }) {
   const [offset, setOffset] = useState(0);
-  return <RunPage key={offset} api={api} instanceId={instanceId} caseId={caseId} onDenied={onDenied} offset={offset}
-    previous={offset > 0 ? () => setOffset((value) => value - 50) : null} next={setOffset} />;
+  const [focusHeading, setFocusHeading] = useState(false);
+  return <RunPage key={offset} api={api} instanceId={instanceId} caseId={caseId} onDenied={onDenied} offset={offset} focusHeading={focusHeading}
+    previous={offset > 0 ? () => { setFocusHeading(true); setOffset((value) => value - 50); } : null}
+    next={(value) => { setFocusHeading(true); setOffset(value); }} />;
 }
 
 function AuditCases({ api, identity, onDenied }) {

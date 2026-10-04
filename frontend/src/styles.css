@@ -301,6 +301,22 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .audit-pagination { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .audit-run-facts { margin-top: var(--space-4); }
 .audit-workspace button:disabled { cursor: wait; }
+.diagnostics-workspace { display: grid; gap: var(--space-5); }
+.diagnostics-workspace > .run-notice { margin: 0; }
+.diagnostics-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: var(--space-3); margin-block: var(--space-4) var(--space-5); }
+.diagnostics-summary > div { padding: var(--space-3); background: var(--surface-input); border: 1px solid var(--border); border-radius: 7px; }
+.diagnostics-summary dt { margin: 0; }
+.diagnostics-summary dd { font-size: 18px; }
+.diagnostics-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: var(--space-4); list-style: none; padding: 0; }
+.diagnostics-metrics > li { min-width: 0; margin: 0; }
+.diagnostics-metrics h4 { margin: 0; }
+.diagnostics-usage { margin-top: var(--space-4); }
+.diagnostics-usage h5 { margin: 0 0 var(--space-2); font-size: 13px; }
+.diagnostics-events { max-height: 36rem; overflow-y: auto; list-style: none; padding: var(--space-1); }
+.diagnostics-events:focus-visible { outline-offset: -2px; }
+.diagnostics-trace summary { cursor: pointer; width: fit-content; margin-top: var(--space-3); padding-block: var(--space-2); color: var(--accent); font-size: 12px; }
+.diagnostics-workspace button:disabled { cursor: wait; }
+.audit-workspace, .diagnostics-workspace, .audit-event-card { min-width: 0; overflow-wrap: anywhere; }
 
 @media (min-width: 1600px) {
   .workspace { padding-top: 56px; }

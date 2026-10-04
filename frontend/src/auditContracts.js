@@ -28,6 +28,8 @@ export function auditBinding(binding, cursor = 0, requireRun = false) {
     && (requireRun ? uuid(binding.run_id) : binding.run_id === undefined || uuid(binding.run_id)) && count(cursor));
 }
 
+export { tools as auditTools, errors as auditErrors };
+
 export function auditCases(payload) {
   check(Array.isArray(payload));
   const seen = new Set();

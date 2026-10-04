@@ -19,7 +19,10 @@ test('inventory chooses the returned policy, not a hard-coded policy', async () 
   const calls = [];
   const api = createApi(async (url) => {
     calls.push(url);
-    return { ok: true, json: async () => calls.length === 1 ? { policy_id: 'policy/demo', available_quantity: 0 } : { id: 'policy/demo' } };
+    return { ok: true, json: async () => calls.length === 1
+      ? { sku: 'LAP /1', policy_id: 'policy/demo', available_quantity: 0 }
+      : { id: 'policy/demo', version: 'v1', return_window_days: 30, allowed_reasons: ['wrong_item'],
+        change_of_mind_requires_unused: true, refund_requires_return: true, description: 'Local policy' } };
   });
   const result = await api.item('LAP /1');
   assert.deepEqual(calls, ['/api/inventory/LAP%20%2F1', '/api/policies/policy%2Fdemo']);
@@ -27,8 +30,12 @@ test('inventory chooses the returned policy, not a hard-coded policy', async () 
 });
 
 test('eligibility preserves inputs and backend decisions without frontend rules', async () => {
-  const decision = { return_eligible: false, denial_reasons: ['new_backend_reason'] };
   const inputs = { customer_id: 'c', sku: 'A&B', quantity: '2', days_since_delivery: '31', reason: 'wrong_item', condition: 'used' };
+  const decision = { order_id: 'order', customer_id: inputs.customer_id, sku: inputs.sku,
+    reason: inputs.reason, condition: inputs.condition, requested_quantity: 2, days_since_delivery: 31,
+    purchased_quantity: 2, policy_id: 'policy/demo', policy_version: 'v1', return_eligible: false,
+    refund_eligible: false, refund_requires_return: true, denial_reasons: ['new_backend_reason'],
+    assessment_basis: 'local_scenario_unverified_inputs', authorization_granted: false };
   const api = createApi(async (url, options) => {
     assert.equal(options.method, 'GET');
     assert.deepEqual(Object.fromEntries(new URL(url, 'http://localhost').searchParams), inputs);
