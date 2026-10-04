@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import KnowledgeEvidence from './KnowledgeEvidence.jsx';
 
 const rejectedMessages = {
   PROVIDER_UNAVAILABLE: 'The run provider is unavailable. No run was started.',
@@ -311,6 +312,7 @@ export default function AIWorkspace({ api, identity }) {
               : <p className="case-caption">No backend error is reported in this snapshot.</p>}
           </div>
         </section>
+        <KnowledgeEvidence tracking={tracking} />
         <section className="run-event-section tool-activity" aria-labelledby="tool-activity-title">
           <div className="tool-activity-heading">
             <h3 id="tool-activity-title">Tool Activity</h3>

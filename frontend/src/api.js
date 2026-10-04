@@ -15,6 +15,34 @@ function requireResponse(valid, resource) {
   if (!valid) throw new Error(`The API returned an invalid ${resource} response. No result was loaded`);
 }
 
+function knowledgeEvidence(event) {
+  // Optional evidence must never interrupt run tracking. Missing or invalid
+  // evidence is unavailable, distinct from a confirmed retrieval with no hits.
+  if (event.kind !== 'TOOL' || event.tool !== 'search_knowledge' || event.ok !== true
+      || event.state !== 'COMPLETED' || event.retrieval_method !== 'local_token_cosine_v1'
+      || !Array.isArray(event.evidence) || event.evidence.length > 5) return null;
+  const boundedText = (value, max) => isText(value) && Array.from(value).length <= max;
+  const references = new Set();
+  const evidence = [];
+  for (const hit of event.evidence) {
+    const chunk = hit?.chunk;
+    const source = chunk?.source;
+    if (!chunk || !source || chunk.trust !== 'untrusted_information' || source.authority !== 'reference_only'
+        || typeof chunk.chunk_id !== 'string' || !/^[a-f0-9]{64}$/.test(chunk.chunk_id)
+        || references.has(chunk.chunk_id) || !boundedText(chunk.text, 600)
+        || !isCount(chunk.start_char) || !isCount(chunk.end_char)
+        || chunk.end_char - chunk.start_char !== Array.from(chunk.text).length
+        || typeof source.document_id !== 'string' || !/^[a-z0-9-]{1,80}$/.test(source.document_id)
+        || !boundedText(source.title, 160) || !boundedText(source.version, 160)
+        || typeof source.source_uri !== 'string' || !/^local-knowledge:\/\/[a-z0-9-]{1,80}$/.test(source.source_uri)) return null;
+    references.add(chunk.chunk_id);
+    // Closed display projection: no query, score, prompts, or arbitrary payloads.
+    evidence.push({ reference: chunk.chunk_id, documentId: source.document_id,
+      title: source.title, version: source.version, source: source.source_uri, snippet: chunk.text });
+  }
+  return evidence;
+}
+
 function runSnapshot(result, { instance_id, case_id, run_id }) {
   requireResponse(result?.instance_id === instance_id && result.case_id === case_id && isUuid(result.run_id)
     && (run_id === undefined || result.run_id === run_id) && runStatuses.includes(result.status)
@@ -114,7 +142,8 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
           && (event.ok === null || typeof event.ok === 'boolean') && isOptionalText(event.error)
           && isOptionalUuid(event.proposal_id), 'run event');
         return { sequence: event.sequence, timestamp: event.timestamp, kind: event.kind, state: event.state,
-          node: event.node, tool: event.tool, ok: event.ok, error: event.error, proposal_id: event.proposal_id };
+          node: event.node, tool: event.tool, ok: event.ok, error: event.error, proposal_id: event.proposal_id,
+          evidence: knowledgeEvidence(event) };
       });
       requireResponse(page.next_after === (events.at(-1)?.sequence ?? after)
         && (!page.has_more || events.length > 0), 'run event cursor');

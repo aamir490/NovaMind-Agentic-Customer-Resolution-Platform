@@ -251,6 +251,13 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .proposal-action { margin-block: var(--space-3); text-transform: capitalize; font-size: 16px; font-weight: 600; color: var(--accent); }
 .proposal-references { margin: var(--space-3) 0 0; padding-left: var(--space-5); }
 .proposal-references li { margin-top: var(--space-2); overflow-wrap: anywhere; }
+.knowledge-evidence-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; max-height: 30rem; overflow-y: auto; }
+.knowledge-evidence-list:focus-visible { outline-offset: -2px; }
+.knowledge-evidence-list .resolution-card:first-child { margin-top: 0; }
+.knowledge-evidence-list h4 { overflow-wrap: anywhere; }
+.knowledge-snippet { margin: var(--space-3) 0; padding-left: var(--space-3); border-left: 2px solid var(--border-strong); color: var(--text-secondary); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.knowledge-evidence summary { width: fit-content; padding-block: var(--space-2); cursor: pointer; color: var(--accent); font-size: 12px; }
+.knowledge-evidence details .case-facts { margin-top: var(--space-3); }
 
 @media (min-width: 1600px) {
   .workspace { padding-top: 56px; }
