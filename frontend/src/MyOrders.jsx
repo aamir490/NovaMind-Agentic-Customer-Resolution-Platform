@@ -6,9 +6,11 @@ import { useEffect, useRef, useState } from 'react';
  *
  * Props
  * -----
- * api — createApi() instance
+ * api             — createApi() instance
+ * onReportProblem — called with the selected Order when customer clicks
+ *                   "Report a problem" from the order detail view
  */
-export default function MyOrders({ api }) {
+export default function MyOrders({ api, onReportProblem }) {
   const [orders, setOrders]   = useState(null);   // null = not yet loaded
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -80,6 +82,17 @@ export default function MyOrders({ api }) {
             This order was placed through the NovaMind demo portal.
             No payment or shipment has been processed.
           </p>
+          {onReportProblem && (
+            <div className="order-detail-intake">
+              <button
+                type="button"
+                onClick={() => onReportProblem(selected)}
+              >
+                Report a problem
+              </button>
+              <span className="case-caption">Have an issue with this order? Our team will review it.</span>
+            </div>
+          )}
         </div>
       </section>
     );

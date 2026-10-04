@@ -251,6 +251,29 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
         items: order.items.map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })) };
     },
 
+    async createMyCase({ orderId, subject, description }) {
+      // SECURITY: customer_id is NEVER sent — the backend derives it from the
+      // authenticated identity. Only order_id, subject, and description are sent.
+      requireResponse(isUuid(orderId), 'case order_id');
+      requireResponse(isText(subject) && Array.from(subject).length <= 200, 'case subject');
+      requireResponse(isText(description) && Array.from(description).length <= 4000, 'case description');
+      const body = { order_id: orderId, subject: subject.trim(), description: description.trim() };
+      const supportCase = await request('/my/cases', { method: 'POST', body });
+      requireResponse(isUuid(supportCase?.id) && isUuid(supportCase.customer_id)
+        && isUuid(supportCase.order_id) && isText(supportCase.subject)
+        && isText(supportCase.description) && isText(supportCase.status)
+        && isTimestamp(supportCase.created_at), 'created case');
+      return {
+        id: supportCase.id,
+        customer_id: supportCase.customer_id,
+        order_id: supportCase.order_id,
+        subject: supportCase.subject,
+        description: supportCase.description,
+        status: supportCase.status,
+        created_at: supportCase.created_at,
+      };
+    },
+
     async listMyOrders() {
       const orders = await get('/my/orders');
       requireResponse(Array.isArray(orders) && orders.length <= 10000, 'my orders list');

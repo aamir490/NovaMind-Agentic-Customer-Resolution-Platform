@@ -24,6 +24,7 @@ from .catalog import CatalogService
 from .catalog_routes import router as catalog_router
 from .customer_orders import CustomerOrderService
 from .customer_order_routes import router as customer_order_router
+from .customer_case_routes import router as customer_case_router
 from .domain import Customer
 
 
@@ -127,6 +128,7 @@ def create_app(*, auth_provider: AuthenticationProvider | None = None,
     app.include_router(frontend_router)
     app.include_router(catalog_router)
     app.include_router(customer_order_router)
+    app.include_router(customer_case_router)
 
     @app.exception_handler(FrontendError)
     async def frontend_error(request: Request, error: FrontendError):

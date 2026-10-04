@@ -29,3 +29,15 @@ class CaseCreate(RequestModel):
 
 class CaseStatusUpdate(RequestModel):
     status: CaseStatus
+
+
+class CustomerCaseCreate(RequestModel):
+    """
+    Customer-safe case creation schema.
+
+    Deliberately omits customer_id — that field is always derived from the
+    authenticated identity by the route handler, never trusted from the body.
+    """
+    order_id: UUID
+    subject: Subject
+    description: Description

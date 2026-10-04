@@ -2,14 +2,16 @@ import { useState } from 'react';
 import CustomerCatalog from './CustomerCatalog.jsx';
 import PlaceOrder from './PlaceOrder.jsx';
 import MyOrders from './MyOrders.jsx';
+import ReportProblem from './ReportProblem.jsx';
 
 /**
  * Customer Portal — top-level container for the customer-facing experience.
  *
  * Manages three sub-views:
- *   catalog   → CustomerCatalog (browse products, select one to order)
- *   order     → PlaceOrder      (confirm & submit the order)
- *   my-orders → MyOrders        (list + detail of past orders)
+ *   catalog        → CustomerCatalog (browse products, select one to order)
+ *   order          → PlaceOrder      (confirm & submit the order)
+ *   my-orders      → MyOrders        (list + detail of past orders)
+ *   report-problem → ReportProblem   (support intake form for a selected order)
  *
  * The parent (main.jsx) renders this when role === 'CUSTOMER'.
  * Internal reviewer/admin views are NEVER rendered from here.
@@ -21,10 +23,12 @@ import MyOrders from './MyOrders.jsx';
  * key      — sessionVersion from parent resets internal state on sign-out
  */
 export default function CustomerPortal({ api, identity }) {
-  // Sub-view within the portal: 'catalog' | 'order' | 'my-orders'
+  // Sub-view within the portal: 'catalog' | 'order' | 'my-orders' | 'report-problem'
   const [portalView, setPortalView] = useState('catalog');
   // The catalog item the customer selected before navigating to order form.
   const [pendingItem, setPendingItem] = useState(null);
+  // The order selected for the support intake form.
+  const [pendingOrder, setPendingOrder] = useState(null);
 
   function handlePlaceOrder(item) {
     setPendingItem(item);
@@ -39,6 +43,16 @@ export default function CustomerPortal({ api, identity }) {
   function handleBackToCatalog() {
     setPendingItem(null);
     setPortalView('catalog');
+  }
+
+  function handleReportProblem(order) {
+    setPendingOrder(order);
+    setPortalView('report-problem');
+  }
+
+  function handleBackToMyOrders() {
+    setPendingOrder(null);
+    setPortalView('my-orders');
   }
 
   return (
@@ -91,7 +105,20 @@ export default function CustomerPortal({ api, identity }) {
       )}
 
       {portalView === 'my-orders' && (
-        <MyOrders api={api} />
+        <MyOrders api={api} onReportProblem={handleReportProblem} />
+      )}
+
+      {portalView === 'report-problem' && pendingOrder && (
+        <ReportProblem
+          api={api}
+          order={pendingOrder}
+          onCancel={handleBackToMyOrders}
+        />
+      )}
+
+      {/* If somehow we land on report-problem without an order, fall back */}
+      {portalView === 'report-problem' && !pendingOrder && (
+        <MyOrders api={api} onReportProblem={handleReportProblem} />
       )}
     </div>
   );

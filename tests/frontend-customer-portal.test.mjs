@@ -532,3 +532,257 @@ test('listCatalog distinguishes available and unavailable products correctly', a
   assert.equal(unavail.length, 1);
   assert.equal(unavail[0].sku, 'LAP-2');
 });
+
+// ===========================================================================
+// Phase 17B.3 — createMyCase() API client tests
+// ===========================================================================
+
+const caseUuid = (n = 1) => `cccccccc-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+/** Build a well-formed SupportCase fixture. */
+function supportCase(overrides = {}) {
+  return {
+    id: caseUuid(1),
+    customer_id: uuid(21),
+    order_id: uuid(20),
+    subject: 'Item arrived damaged',
+    description: 'The item was visibly damaged when I opened the package.',
+    status: 'open',
+    created_at: '2026-10-05T10:00:00Z',
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// createMyCase — request shape and security
+// ---------------------------------------------------------------------------
+
+test('createMyCase sends POST to /api/my/cases', async () => {
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Test', description: 'A description here.' });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, '/api/my/cases');
+  assert.equal(calls[0].options.method, 'POST');
+});
+
+test('createMyCase body contains order_id, subject, description — nothing else', async () => {
+  const orderId = uuid(20);
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId, subject: 'My subject', description: 'My description.' });
+  const body = JSON.parse(calls[0].options.body);
+  assert.deepEqual(Object.keys(body).sort(), ['description', 'order_id', 'subject'].sort());
+  assert.equal(body.order_id, orderId);
+  assert.equal(body.subject, 'My subject');
+  assert.equal(body.description, 'My description.');
+});
+
+test('createMyCase body does NOT contain customer_id', async () => {
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc ok.' });
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal('customer_id' in body, false,
+    'customer_id must NEVER be sent by the frontend in createMyCase');
+});
+
+test('createMyCase does not send user_id, role, status, or case id', async () => {
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc ok.' });
+  const body = JSON.parse(calls[0].options.body);
+  for (const forbidden of ['user_id', 'role', 'status', 'id']) {
+    assert.equal(forbidden in body, false, `'${forbidden}' must not be in createMyCase body`);
+  }
+});
+
+test('createMyCase uses authenticated Bearer token', async () => {
+  const { api, calls } = recordingClient([{ body: supportCase() }], { token: 'intake-test-token-xyz' });
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' });
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer intake-test-token-xyz');
+});
+
+test('createMyCase uses no-store cache and omit credentials', async () => {
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' });
+  assert.equal(calls[0].options.cache, 'no-store');
+  assert.equal(calls[0].options.credentials, 'omit');
+  assert.equal(calls[0].options.redirect, 'error');
+});
+
+test('createMyCase token never appears in the URL', async () => {
+  const secret = 'super-secret-intake-token';
+  const { api, calls } = recordingClient([{ body: supportCase() }], { token: secret });
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' });
+  assert.equal(calls[0].url.includes(secret), false);
+});
+
+// ---------------------------------------------------------------------------
+// createMyCase — client-side validation (no network hit)
+// ---------------------------------------------------------------------------
+
+test('createMyCase rejects non-UUID order_id before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: 'not-a-uuid', subject: 'Sub', description: 'Desc.' }),
+    /case order_id/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase rejects empty subject before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: '', description: 'Desc.' }),
+    /case subject/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase rejects whitespace-only subject before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: '   ', description: 'Desc.' }),
+    /case subject/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase rejects subject over 200 chars before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: 'x'.repeat(201), description: 'Desc.' }),
+    /case subject/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase accepts subject of exactly 200 chars', async () => {
+  const { api } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'x'.repeat(200), description: 'Desc ok.' });
+  // no throw expected
+});
+
+test('createMyCase rejects empty description before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: '' }),
+    /case description/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase rejects description over 4000 chars before sending a request', async () => {
+  let calls = 0;
+  const api = createApi(async () => { calls++; throw new Error('unexpected'); });
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'x'.repeat(4001) }),
+    /case description/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('createMyCase accepts description of exactly 4000 chars', async () => {
+  const { api } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'x'.repeat(4000) });
+  // no throw expected
+});
+
+// ---------------------------------------------------------------------------
+// createMyCase — server error propagation
+// ---------------------------------------------------------------------------
+
+test('createMyCase propagates 403 (cross-customer order)', async () => {
+  await assert.rejects(
+    client('Access denied', { status: 403 }).createMyCase({
+      orderId: uuid(20), subject: 'Sub', description: 'Desc.',
+    }),
+    { status: 403 },
+  );
+});
+
+test('createMyCase propagates 422 from server (invalid input)', async () => {
+  await assert.rejects(
+    client([{ msg: 'value too long' }], { status: 422 }).createMyCase({
+      orderId: uuid(20), subject: 'Sub', description: 'Desc.',
+    }),
+    { status: 422 },
+  );
+});
+
+test('createMyCase propagates 401 and triggers onUnauthorized', async () => {
+  let expired = 0;
+  const api = createApi(
+    async () => ({ ok: false, status: 401, json: async () => ({ detail: 'UNAUTHENTICATED' }) }),
+    { onUnauthorized: () => expired++ },
+  );
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' }),
+    { status: 401 },
+  );
+  assert.equal(expired, 1);
+});
+
+// ---------------------------------------------------------------------------
+// createMyCase — response validation
+// ---------------------------------------------------------------------------
+
+test('createMyCase returns validated case object', async () => {
+  const sc = supportCase();
+  const result = await client(sc).createMyCase({
+    orderId: uuid(20), subject: 'Sub', description: 'Desc.',
+  });
+  assert.ok(result.id.match(/^[0-9a-f-]{36}$/i));
+  assert.ok(result.customer_id.match(/^[0-9a-f-]{36}$/i));
+  assert.equal(result.status, 'open');
+  assert.equal(typeof result.subject, 'string');
+  assert.equal(typeof result.created_at, 'string');
+});
+
+test('createMyCase rejects response missing case id', async () => {
+  await assert.rejects(
+    client(supportCase({ id: undefined })).createMyCase({
+      orderId: uuid(20), subject: 'Sub', description: 'Desc.',
+    }),
+    /created case/,
+  );
+});
+
+test('createMyCase rejects response missing customer_id', async () => {
+  await assert.rejects(
+    client(supportCase({ customer_id: undefined })).createMyCase({
+      orderId: uuid(20), subject: 'Sub', description: 'Desc.',
+    }),
+    /created case/,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Disposed session
+// ---------------------------------------------------------------------------
+
+test('disposed api rejects createMyCase with session-ended error', async () => {
+  const api = createApi(async () => ({ ok: true, json: async () => supportCase() }));
+  api.dispose();
+  await assert.rejects(
+    api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' }),
+    /session has ended/,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// createMyCase never hits internal staff URLs
+// ---------------------------------------------------------------------------
+
+test('createMyCase only hits /api/my/cases — never any internal staff URL', async () => {
+  const staffPaths = ['/api/runs', '/api/reviews', '/api/diagnostics', '/api/cases'];
+  const { api, calls } = recordingClient([{ body: supportCase() }]);
+  await api.createMyCase({ orderId: uuid(20), subject: 'Sub', description: 'Desc.' });
+  assert.equal(calls[0].url, '/api/my/cases');
+  for (const staffPath of staffPaths) {
+    assert.equal(calls[0].url.startsWith(staffPath), false,
+      `createMyCase must not hit staff path ${staffPath}`);
+  }
+});
