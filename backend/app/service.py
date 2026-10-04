@@ -70,6 +70,13 @@ class CaseService:
                 raise NotFoundError("Case not found")
             return self._cases[case_id]
 
+    def list_orders(self, customer_id: UUID | None = None) -> list[Order]:
+        with self._lock:
+            if customer_id is not None:
+                self.get_customer(customer_id)
+            return [order for order in self._orders.values()
+                    if customer_id is None or order.customer_id == customer_id]
+
     def list_cases(self, customer_id: UUID | None = None) -> list[SupportCase]:
         with self._lock:
             if customer_id is not None:
