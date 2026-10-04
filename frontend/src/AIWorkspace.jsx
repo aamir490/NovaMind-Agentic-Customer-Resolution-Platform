@@ -8,12 +8,21 @@ const rejectedMessages = {
 };
 const activeRunStatuses = new Set(['RUNNING', 'RESUMING']);
 const maxDisplayedEvents = 256;
+const runStates = {
+  RUNNING: { label: 'Running', detail: 'The workflow is in progress.', tone: 'active' },
+  RESUMING: { label: 'Resuming', detail: 'The workflow is resuming.', tone: 'active' },
+  REVIEW_REQUIRED: { label: 'Waiting for human review', detail: 'The workflow is paused for human review. No decision can be submitted from this workspace.', tone: 'waiting' },
+  REVIEWED: { label: 'Review recorded', detail: 'Human review has been recorded. This does not mean a business action was executed.', tone: 'waiting' },
+  COMPLETED: { label: 'Completed', detail: 'The workflow has finished. Its confirmed response and activity are shown below.', tone: 'complete' },
+  FAILED: { label: 'Failed', detail: 'The workflow has stopped with a failure. Its last confirmed response and activity remain available below.', tone: 'error' },
+};
 
 function trackingError(error) {
+  if (error.status === 401) return 'Your session could not be verified. Live tracking has stopped. Confirm your identity before checking existing records.';
   if (error.status === 403) return 'Access to this run was denied. Live tracking has stopped.';
   if (error.status === 404) return 'This run is no longer available. It may have been lost after a server restart. Do not resubmit automatically.';
   if (error.status === 409) return 'The run or event cursor is no longer valid. Tracking has stopped; inspect existing records before submitting again.';
-  return 'Live updates could not be verified. The last confirmed status and events are shown. This does not cancel the run.';
+  return 'Live updates could not be verified. The last confirmed status and events are shown. Retry live tracking to check this same run. This does not cancel or resubmit the run.';
 }
 
 export default function AIWorkspace({ api, identity }) {
@@ -25,10 +34,12 @@ export default function AIWorkspace({ api, identity }) {
   const [attempt, setAttempt] = useState(null);
   const [tracking, setTracking] = useState(null);
   const [trackingRetry, setTrackingRetry] = useState(0);
+  const [retryingTracking, setRetryingTracking] = useState(false);
   const lastTracking = useRef(null);
   const mounted = useRef(false);
   const caseRequest = useRef(false);
   const submitted = useRef(false);
+  const trackingRetryRequest = useRef(false);
   const locked = attempt !== null && attempt.state !== 'rejected';
 
   useEffect(() => {
@@ -85,6 +96,11 @@ export default function AIWorkspace({ api, identity }) {
         if (signal.aborted) return;
         publish({ phase: 'error', error: trackingError(error),
           canRetry: ![401, 403, 404, 409].includes(error.status) });
+      } finally {
+        if (!signal.aborted) {
+          trackingRetryRequest.current = false;
+          setRetryingTracking(false);
+        }
       }
     }
 
@@ -92,6 +108,13 @@ export default function AIWorkspace({ api, identity }) {
     poll();
     return () => { clearTimeout(timer); controller.abort(); };
   }, [api, attempt, trackingRetry]);
+
+  function retryTracking() {
+    if (!tracking?.canRetry || trackingRetryRequest.current) return;
+    trackingRetryRequest.current = true;
+    setRetryingTracking(true);
+    setTrackingRetry((value) => value + 1);
+  }
 
   async function loadCases() {
     if (!api || caseRequest.current || submitted.current) return;
@@ -145,6 +168,34 @@ export default function AIWorkspace({ api, identity }) {
   </section>;
 
   const snapshot = tracking?.snapshot ?? attempt?.snapshot;
+  const runState = snapshot ? runStates[snapshot.status] : null;
+  const submitting = attempt?.state === 'sending';
+  const caseHelp = loadingCases ? 'Loading cases available to your identity…'
+    : caseError ? 'Cases are unavailable. Refresh cases to try again.'
+      : cases === null ? 'Load your available cases to begin.'
+        : cases.length === 0 ? 'No cases are available for your identity. You can refresh to check again.'
+          : `${cases.length} ${cases.length === 1 ? 'case is' : 'cases are'} available. Select one for this request.`;
+  const submitHelp = submitting ? 'Submission in progress. Please wait; another request cannot be sent.'
+    : attempt?.state === 'uncertain' ? 'Submission is locked because a run may have started. Use the request ID to check existing records before taking further action.'
+      : attempt?.state === 'accepted' ? 'This request has been submitted. Follow its confirmed status in the run panel.'
+        : identity.provider === 'unavailable' ? 'Starting a run is unavailable until the provider is available.'
+          : loadingCases ? 'Wait for cases to finish loading before submitting.'
+            : !caseId ? 'Select an available case to enable submission.'
+              : !message.trim() ? 'Enter a request message to enable submission.'
+                : 'Ready to submit this request for the selected case.';
+  const statusLabel = runState?.label ?? (submitting ? 'Submitting request'
+    : attempt?.state === 'uncertain' ? 'Submission not confirmed'
+      : attempt?.state === 'rejected' ? 'Request not started' : 'No run yet');
+  const statusDetail = snapshot ? `${runState.detail} ${tracking?.phase === 'error'
+    ? 'Live tracking is stopped; this is the last confirmed status.'
+    : tracking?.phase === 'stopped' ? 'Automatic tracking has stopped.'
+      : retryingTracking ? 'Reconnecting to live tracking…'
+        : activeRunStatuses.has(snapshot.status) ? 'Live tracking is checking for updates.'
+          : 'Loading the remaining workflow events…'}`
+    : submitting ? 'Waiting for the API to confirm the request. A run has not yet been confirmed.'
+      : attempt?.state === 'uncertain' ? 'A run may have started. Submission remains locked to prevent a duplicate.'
+        : attempt?.state === 'rejected' ? 'Review the error below and your request before trying again.'
+          : 'Load cases, select a case, and enter a request. Confirmed run details will appear here after submission.';
   const toolEvents = tracking?.events.filter((event) => event.kind === 'TOOL') ?? [];
   const review = snapshot?.review;
   const proposalReferences = [...new Set(toolEvents.map((event) => event.proposal_id).filter(Boolean))]
@@ -157,33 +208,43 @@ export default function AIWorkspace({ api, identity }) {
       </div>
       <p className="case-caption">Starts a real workflow for the selected case. It may create a proposal for human review. No business action is executed.</p>
       {identity.provider === 'unavailable' && <p className="run-notice" role="status">The run provider is unavailable. Confirm your identity again after the service becomes available.</p>}
-      <button type="button" className="button-secondary" disabled={loadingCases || locked} onClick={loadCases}>
-        {loadingCases ? 'Loading cases…' : 'Refresh cases'}
+      <button type="button" className="button-secondary" disabled={loadingCases || locked}
+        aria-busy={loadingCases} aria-describedby={locked ? 'run-submit-help' : 'run-case-help'} onClick={loadCases}>
+        {loadingCases ? 'Loading cases…' : cases === null && !caseError ? 'Load cases' : 'Refresh cases'}
       </button>
+      <p id="run-case-help" className="case-caption run-control-help" role="status" aria-atomic="true">{caseHelp}</p>
       {caseError && <p className="run-error" role="alert">{caseError}</p>}
-      {cases?.length === 0 && <p className="case-caption" role="status">No cases were returned for your identity.</p>}
-      <fieldset disabled={loadingCases || locked}>
-        <label>Support case<select required value={caseId} onChange={(event) => setCaseId(event.target.value)}>
-          <option value="">{cases === null ? 'Refresh cases to begin' : 'Choose a case'}</option>
+      <fieldset disabled={loadingCases || locked} aria-busy={loadingCases || submitting}>
+        <legend className="sr-only">Resolution run request</legend>
+        <label>Support case<select required value={caseId} disabled={!cases?.length}
+          aria-describedby="run-case-help" onChange={(event) => setCaseId(event.target.value)}>
+          <option value="">{loadingCases ? 'Loading cases…' : caseError ? 'Cases unavailable'
+            : cases === null ? 'Load cases to begin' : cases.length === 0 ? 'No cases available' : 'Choose a case'}</option>
           {cases?.map((record) => <option key={record.id} value={record.id}>{record.subject} — {record.id}</option>)}
         </select></label>
         <label>Request message<textarea required rows={5} maxLength={8000} value={message}
           aria-describedby="run-message-help" onChange={(event) => setMessage(event.target.value)} /></label>
         <p id="run-message-help" className="case-caption">Describe the support request. Maximum 8,000 characters. The case ID comes from your selection.</p>
-        <button type="submit" disabled={identity.provider === 'unavailable' || !caseId || !message.trim()}>
-          {attempt?.state === 'sending' ? 'Submitting request…' : attempt?.state === 'accepted' ? 'Request submitted' : 'Start run'}
+        <button type="submit" disabled={loadingCases || locked || identity.provider === 'unavailable' || !caseId || !message.trim()}
+          aria-busy={submitting} aria-describedby="run-submit-help">
+          {submitting ? 'Submitting request…' : attempt?.state === 'accepted' ? 'Request submitted'
+            : attempt?.state === 'uncertain' ? 'Submission locked' : 'Start run'}
         </button>
       </fieldset>
+      <p id="run-submit-help" className="case-caption run-control-help">{submitHelp}</p>
       <p className="run-footnote">Leaving this view does not stop a submitted run. If the response is lost, do not create another submission for the same request.</p>
     </form>
 
     <section className="case-panel" aria-labelledby="run-snapshot-title">
       <div className="case-panel-heading">
         <div><p className="eyebrow">Live workflow</p><h2 id="run-snapshot-title">Run status and events</h2></div>
-        {snapshot && <span className="case-status">{snapshot.status}</span>}
+        {snapshot && <span className="case-status" data-tone={runState.tone}>{runState.label}</span>}
       </div>
-      {!attempt && <p className="case-caption">No run has been submitted from this workspace.</p>}
-      {attempt?.state === 'sending' && <p role="status" className="case-caption">Waiting for the start request response. Run status has not been confirmed.</p>}
+      <div className="run-state-summary" role="status" aria-atomic="true"
+        data-tone={attempt?.error || tracking?.error ? 'error' : runState?.tone ?? (submitting ? 'active' : 'idle')}>
+        <h3>{snapshot ? `Last confirmed: ${statusLabel}` : statusLabel}</h3>
+        <p>{statusDetail}</p>
+      </div>
       {attempt?.error && <p className="run-error" role="alert">{attempt.error}</p>}
       {attempt && <dl className="case-facts run-identifiers">
         <div><dt>Request ID</dt><dd>{attempt.body.request_id}</dd></div>
@@ -191,16 +252,10 @@ export default function AIWorkspace({ api, identity }) {
         <div><dt>Server instance ID</dt><dd>{attempt.body.instance_id}</dd></div>
       </dl>}
       {snapshot && <>
-        <p className="run-notice" role="status">Last confirmed status: {snapshot.status}.{' '}
-          {tracking?.phase === 'error' ? 'Live updates are stopped.'
-            : tracking?.phase === 'stopped'
-              ? snapshot.status === 'REVIEW_REQUIRED' ? 'Waiting for human review. Automatic tracking has stopped.'
-                : 'Automatic tracking has stopped for this status.'
-              : 'Checking the backend for status and workflow events.'}
-        </p>
         {tracking?.error && <p className="run-error" role="alert">{tracking.error}</p>}
-        {tracking?.canRetry && <button type="button" className="button-secondary"
-          onClick={() => setTrackingRetry((value) => value + 1)}>Retry live tracking</button>}
+        {(tracking?.canRetry || retryingTracking) && <button type="button" className="button-secondary"
+          disabled={retryingTracking} aria-busy={retryingTracking} aria-describedby="run-tracking-help"
+          onClick={retryTracking}>{retryingTracking ? 'Reconnecting…' : 'Retry live tracking'}</button>}
         <dl className="case-facts run-identifiers">
           <div><dt>Run ID</dt><dd>{snapshot.run_id}</dd></div>
           {snapshot.workflow_id && <div><dt>Workflow ID</dt><dd>{snapshot.workflow_id}</dd></div>}
@@ -252,7 +307,7 @@ export default function AIWorkspace({ api, identity }) {
             <h4>Action &amp; error state</h4>
             {snapshot.actions_executed === false && <p className="run-notice">No business action was executed.</p>}
             {snapshot.status === 'FAILED' && <p className="run-error">The run has failed.</p>}
-            {snapshot.error ? <p className="run-error" role="alert">Backend error: {snapshot.error}</p>
+            {snapshot.error ? <p className="run-error">The backend reported an error for this run. Use the run ID when seeking support.</p>
               : <p className="case-caption">No backend error is reported in this snapshot.</p>}
           </div>
         </section>
@@ -284,11 +339,14 @@ export default function AIWorkspace({ api, identity }) {
             </ol>}
         </section>
         <section className="run-event-section" aria-labelledby="run-events-title">
-          <h3 id="run-events-title">Workflow events</h3>
+          <h3 id="run-events-title">Workflow Events</h3>
           {tracking?.gap && <p className="run-notice">Some events are no longer retained by the backend. This history has a gap.</p>}
           {tracking?.trimmed && <p className="case-caption">Showing the latest {maxDisplayedEvents} received events.</p>}
-          {!tracking?.events.length && <p className="case-caption">No workflow events have been loaded yet.</p>}
-          {tracking?.events.length > 0 && <ol className="run-events" aria-label="Workflow events in sequence order">
+          {!tracking?.events.length && <p className="case-caption">{tracking?.phase === 'error'
+            ? 'No workflow events have been received. Live tracking is stopped.'
+            : tracking?.phase === 'stopped' ? 'No workflow events were returned for this run.'
+              : 'Waiting for workflow events…'}</p>}
+          {tracking?.events.length > 0 && <ol className="run-events" aria-label="Workflow events in sequence order" tabIndex={0}>
             {tracking.events.map((event) => <li key={event.sequence}>
               <div className="run-event-heading">
                 <strong>#{event.sequence} {event.kind === 'STATE' ? 'Run status'
@@ -298,11 +356,11 @@ export default function AIWorkspace({ api, identity }) {
               </div>
               <time dateTime={event.timestamp}>{event.timestamp}</time>
               {event.ok !== null && <p className="case-caption">{event.ok ? 'Tool succeeded' : 'Tool failed'}</p>}
-              {event.error && <p className="run-error">Backend error: {event.error}</p>}
+              {event.error && <p className="run-error">An error was reported for this event. Use the run ID and event sequence when seeking support.</p>}
             </li>)}
           </ol>}
         </section>
-        <p className="run-footnote">Only backend-reported status and events are shown. Retrying tracking reads this run without submitting another request. Approval does not execute an action.</p>
+        <p id="run-tracking-help" className="run-footnote">Only backend-reported status and events are shown. Retrying tracking reads this run without submitting another request. Approval does not execute an action.</p>
       </>}
     </section>
   </div>;
