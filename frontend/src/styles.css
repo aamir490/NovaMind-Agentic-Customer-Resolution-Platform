@@ -258,12 +258,18 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .knowledge-snippet { margin: var(--space-3) 0; padding-left: var(--space-3); border-left: 2px solid var(--border-strong); color: var(--text-secondary); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .knowledge-evidence summary { width: fit-content; padding-block: var(--space-2); cursor: pointer; color: var(--accent); font-size: 12px; }
 .knowledge-evidence details .case-facts { margin-top: var(--space-3); }
+.review-queue-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); list-style: none; margin: var(--space-5) 0 0; padding: 0; }
+.review-queue-list .resolution-card { min-width: 0; margin-top: 0; }
+.review-queue-list h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.review-queue button:disabled { opacity: 1; cursor: not-allowed; color: var(--text-muted); background: var(--surface-input); border-color: var(--border); }
+.review-queue button[aria-busy="true"] { cursor: wait; }
 
 @media (min-width: 1600px) {
   .workspace { padding-top: 56px; }
   .workspace-grid { grid-template-columns: minmax(0, 1fr) 320px; }
 }
 @media (max-width: 1199px) {
+  .review-queue-list { grid-template-columns: minmax(0, 1fr); }
   .ai-workspace { grid-template-columns: minmax(0, 1fr); }
   .case-details-grid, .case-assessment-grid { grid-template-columns: minmax(0, 1fr); }
   .app-shell { grid-template-columns: 200px minmax(0, 1fr); }

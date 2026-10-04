@@ -115,6 +115,29 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
       return { user_id: identity.user_id, role: identity.role, customer_id: identity.customer_id,
         instance_id: payload.instance_id, provider: payload.provider, memory_available: payload.memory_available };
     },
+    async pendingReviews(instanceId, options) {
+      const page = await get('/reviews', options);
+      requireResponse(page?.instance_id === instanceId && isTimestamp(page.snapshot_at)
+        && page.scope === 'pending_reviews_in_this_process'
+        && Array.isArray(page.items) && page.items.length <= 1024, 'pending review queue');
+      const runIds = new Set();
+      const items = page.items.map((item) => {
+        const review = item?.review;
+        requireResponse(item && isUuid(item.run_id) && !runIds.has(item.run_id)
+          && isUuid(item.case_id) && isUuid(item.workflow_id) && isText(item.case_subject)
+          && item.status === 'REVIEW_REQUIRED' && item.actions_executed === false && isTimestamp(item.updated_at)
+          && review && review.case_id === item.case_id && review.workflow_id === item.workflow_id
+          && isUuid(review.proposal_id) && isUuid(review.review_id) && review.status === 'PENDING_REVIEW'
+          && ['return', 'refund', 'replacement'].includes(review.action)
+          && isText(review.rationale) && Array.from(review.rationale).length <= 4000, 'pending review');
+        runIds.add(item.run_id);
+        return { runId: item.run_id, caseId: item.case_id, caseSubject: item.case_subject,
+          workflowId: item.workflow_id, updatedAt: item.updated_at, status: item.status,
+          proposalId: review.proposal_id, reviewId: review.review_id, action: review.action,
+          rationale: review.rationale, reviewStatus: review.status };
+      });
+      return { items, snapshotAt: page.snapshot_at };
+    },
     async startRun({ instance_id, request_id, case_id, message }) {
       // Exactly one POST per explicit submission; never retry a potentially committed run.
       const result = await request('/runs', { method: 'POST', body: { instance_id, request_id, case_id, message } });

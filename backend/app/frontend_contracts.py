@@ -84,6 +84,26 @@ class RunPage(Contract):
     scope: Literal["case_runs_in_this_process"] = "case_runs_in_this_process"
 
 
+class PendingReviewRun(Contract):
+    run_id: UUID
+    case_id: UUID
+    case_subject: str
+    workflow_id: UUID
+    status: Literal["REVIEW_REQUIRED"] = "REVIEW_REQUIRED"
+    updated_at: datetime
+    review: ReviewRequired
+    actions_executed: Literal[False] = False
+
+
+class PendingReviewPage(Contract):
+    instance_id: UUID
+    snapshot_at: datetime
+    scope: Literal["pending_reviews_in_this_process"] = "pending_reviews_in_this_process"
+    # The runtime retains at most 1,024 runs. One bounded read avoids skipping
+    # pending entries when reviews change between offset-based page requests.
+    items: tuple[PendingReviewRun, ...] = Field(max_length=1024)
+
+
 class ConversationPage(Contract):
     items: tuple[Conversation, ...]
     next_offset: int | None

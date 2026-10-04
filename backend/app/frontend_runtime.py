@@ -10,7 +10,9 @@ from threading import RLock
 from uuid import UUID, uuid4
 
 from .agent import AgentRequest
-from .frontend_contracts import AuditPage, AuditSummary, EventPage, RunEvent, RunPage, RunSnapshot
+from .frontend_contracts import (
+    AuditPage, AuditSummary, EventPage, PendingReviewPage, PendingReviewRun, RunEvent, RunPage, RunSnapshot,
+)
 from .hitl import HITLWorkflow, HumanDecision, ResumeRejected
 from .knowledge import RetrievalResult
 from .llm import StructuredLLM
@@ -210,6 +212,26 @@ class FrontendRuntime:
                        and (identity.role != Role.CUSTOMER or run.owner == identity.user_id)]
             return RunPage(items=tuple(records[offset:offset + limit]),
                 next_offset=offset + limit if offset + limit < len(records) else None)
+
+    def pending_reviews(self):
+        require_roles(Role.REVIEWER, Role.ADMIN)
+        authorization = Authorization(self._cases, self._proposals)
+        with self._lock:
+            items = []
+            for run in self._runs.values():
+                snapshot, review = run.snapshot, run.snapshot.review
+                if snapshot.status != "REVIEW_REQUIRED" or review is None:
+                    continue
+                support_case = authorization.case(snapshot.case_id)
+                proposal = authorization.proposal(review.proposal_id)
+                if (proposal.status != ProposalStatus.PENDING_REVIEW
+                        or proposal.case_id != snapshot.case_id or review.case_id != snapshot.case_id
+                        or review.workflow_id != snapshot.workflow_id):
+                    continue
+                items.append(PendingReviewRun(run_id=snapshot.run_id, case_id=snapshot.case_id,
+                    case_subject=support_case.subject, workflow_id=snapshot.workflow_id,
+                    updated_at=snapshot.updated_at, review=review))
+            return PendingReviewPage(instance_id=self.instance_id, snapshot_at=now(), items=tuple(items))
 
     def decide(self, run_id, body, *, trace_id=None):
         require_roles(Role.REVIEWER, Role.ADMIN)

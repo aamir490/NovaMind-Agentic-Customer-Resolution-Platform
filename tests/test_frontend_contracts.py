@@ -117,6 +117,82 @@ class FrontendContractTests(unittest.IsolatedAsyncioTestCase):
                 **{key: snapshot["review"][key] for key in ("workflow_id", "case_id", "proposal_id", "review_id")},
                 "decision": "APPROVE", "note": "Reviewed by a human", **changes}
 
+    async def test_pending_review_queue_roles_and_empty_state(self):
+        for who, expected in ((None, 401), ("a", 403), ("b", 403), ("same_case", 403),
+                              ("reviewer", 200), ("admin", 200)):
+            response = await self.request("GET", "/api/reviews", who=who)
+            self.assertEqual(response.status_code, expected, response.text)
+            self.assertEqual(response.headers["Cache-Control"], "no-store")
+            if expected == 200:
+                self.assertEqual(response.json()["items"], [])
+                self.assertEqual(response.json()["instance_id"], str(self.runtime.instance_id))
+                self.assertEqual(response.json()["scope"], "pending_reviews_in_this_process")
+            else:
+                self.assertNotIn("items", response.json())
+
+    async def test_pending_review_queue_real_projection_is_read_only(self):
+        self.proposal_script()
+        run = await self.finished((await self.start())["run_id"])
+        self.assertEqual(run["status"], "REVIEW_REQUIRED")
+        proposals_before = self.app.state.proposal_service.list_for_case(self.records[0].id)
+        calls_before = self.providers[0].calls
+        for who in ("reviewer", "admin"):
+            response = await self.request("GET", "/api/reviews", who=who)
+            self.assertEqual(response.status_code, 200, response.text)
+            page = response.json()
+            self.assertEqual(set(page), {"instance_id", "snapshot_at", "scope", "items"})
+            self.assertEqual(len(page["items"]), 1)
+            item = page["items"][0]
+            self.assertEqual(item, {"run_id": run["run_id"], "case_id": run["case_id"],
+                "case_subject": self.records[0].subject, "workflow_id": run["workflow_id"],
+                "status": "REVIEW_REQUIRED", "updated_at": run["updated_at"],
+                "review": run["review"], "actions_executed": False})
+            for marker in ("Customer context must not appear", "arguments", "messages", "response_schema",
+                           "graph_state", "checkpoint", self.tokens[who]):
+                self.assertNotIn(marker, response.text)
+        for who in (None, "a", "b", "same_case"):
+            response = await self.request("GET", "/api/reviews", who=who)
+            self.assertEqual(response.status_code, 401 if who is None else 403)
+            self.assertNotIn(run["review"]["rationale"], response.text)
+            self.assertNotIn(run["run_id"], response.text)
+        self.assertEqual(await self.finished(run["run_id"]), run)
+        self.assertEqual(self.app.state.proposal_service.list_for_case(self.records[0].id), proposals_before)
+        self.assertEqual(self.providers[0].calls, calls_before)
+
+    async def test_pending_review_queue_excludes_other_run_states(self):
+        completed = await self.finished((await self.start())["run_id"])
+        self.assertEqual(completed["status"], "COMPLETED")
+        self.script = [RuntimeError("private-provider-marker")]
+        failed = await self.finished((await self.start())["run_id"])
+        self.assertEqual(failed["status"], "FAILED")
+        entered, release = Event(), Event()
+        self.runtime.provider_factory = lambda: ScriptedProvider([{"kind": "final"}], entered=entered, release=release)
+        try:
+            running = await self.start()
+            self.assertTrue(await asyncio.to_thread(entered.wait, 2))
+            response = await self.request("GET", "/api/reviews", who="reviewer")
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json()["items"], [])
+        finally:
+            release.set()
+        await self.finished(running["run_id"])
+
+    async def test_pending_review_queue_removes_decided_and_stale_proposals(self):
+        self.proposal_script()
+        run = await self.finished((await self.start())["run_id"])
+        response = await self.request("POST", f"/api/runs/{run['run_id']}/decision", self.decision(run), "reviewer")
+        self.assertEqual(response.status_code, 202, response.text)
+        self.assertEqual((await self.finished(run["run_id"]))["status"], "REVIEWED")
+        self.assertEqual((await self.request("GET", "/api/reviews", who="reviewer")).json()["items"], [])
+        stale = await self.finished((await self.start())["run_id"])
+        proposal_id = stale["review"]["proposal_id"]
+        response = await self.request("POST", f"/api/proposals/{proposal_id}/reject", {"note": "Direct review"}, "reviewer")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual((await self.finished(stale["run_id"]))["status"], "REVIEW_REQUIRED")
+        response = await self.request("GET", "/api/reviews", who="admin")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["items"], [])
+
     async def test_identity_authentication_permissions_and_no_cache(self):
         for who, expected in ((None, 401), ("a", 200), ("reviewer", 200), ("admin", 200)):
             response = await self.request("GET", "/api/identity", who=who)

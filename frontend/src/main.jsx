@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 import CaseReview from './CaseReview.jsx';
 import AIWorkspace from './AIWorkspace.jsx';
+import ReviewQueue from './ReviewQueue.jsx';
 import { createApi } from './api.js';
 
 const views = [
@@ -17,8 +18,7 @@ const views = [
     description: 'Submit a case-bound request and follow its status and workflow events.',
     icon: 'M5 4h14v12H9l-4 4zM8 8h8M8 12h5' },
   { id: 'reviews', label: 'Reviews', title: 'Reviews',
-    description: 'A place for human review.',
-    placeholder: 'The review queue is not available yet. No approval or rejection controls are connected here.',
+    description: 'Read-only review of workflows waiting for a human decision.',
     icon: 'M9 4H5v17h14V4h-4M9 3h6v4H9zM8 13l3 3 5-6' },
   { id: 'audit', label: 'Audit', title: 'Audit',
     description: 'A place for review history and audit records.',
@@ -183,7 +183,7 @@ function App() {
               <h1 aria-live="polite">{view.title}</h1>
               <p className="intro">{view.description}</p>
             </div>
-            <span className="badge">{activeView === 'cases' ? 'Read-only workspace' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
+            <span className="badge">{['cases', 'reviews'].includes(activeView) ? 'Read-only workspace' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
           </div>
           {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
             <p className="eyebrow">{view.label}</p>
@@ -193,6 +193,7 @@ function App() {
           <div hidden={activeView !== 'ai-workspace'}>
             <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
           </div>
+          {activeView === 'reviews' && <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity} />}
           {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
           <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
             <CaseReview key={sessionVersion} api={session?.api} />

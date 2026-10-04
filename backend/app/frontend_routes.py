@@ -10,7 +10,7 @@ from fastapi.routing import APIRoute
 from .conversations import ConversationError
 from .frontend_contracts import (
     AuditPage, ConversationPage, DiagnosticsResponse, EventPage, IdentityResponse, MessagePage,
-    OperationMetrics, RunDecision, RunPage, RunSnapshot, RunStart, TelemetryEvent,
+    OperationMetrics, PendingReviewPage, RunDecision, RunPage, RunSnapshot, RunStart, TelemetryEvent,
 )
 from .frontend_runtime import FrontendError, FrontendRuntime, now
 from .observability import OPERATIONS
@@ -49,6 +49,11 @@ def identity(runtime: Runtime):
     return IdentityResponse(identity=subject, can_review=privileged, can_view_diagnostics=privileged,
         instance_id=runtime.instance_id, provider="local_scripted" if runtime.provider_factory else "unavailable",
         memory_available=runtime.memory is not None)
+
+
+@router.get("/reviews", response_model=PendingReviewPage)
+def pending_reviews(runtime: Runtime):
+    return runtime.pending_reviews()
 
 
 @router.post("/runs", response_model=RunSnapshot, status_code=202)
