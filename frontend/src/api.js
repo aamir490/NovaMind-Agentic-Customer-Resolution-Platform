@@ -1,3 +1,5 @@
+import { auditBinding, auditCases, auditRuns, auditPage } from './auditContracts.js';
+
 // Same-origin authenticated reads, explicit run starts, and explicit human decisions.
 const isText = (value) => typeof value === 'string' && value.trim().length > 0;
 const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
@@ -184,6 +186,17 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
       requireResponse(page.next_after === (events.at(-1)?.sequence ?? after)
         && (!page.has_more || events.length > 0), 'run event cursor');
       return { snapshot, events, next_after: page.next_after, has_more: page.has_more, gap: page.gap };
+    },
+    async auditCases(options) {
+      return auditCases(await get('/cases', options));
+    },
+    async auditRuns(binding, offset = 0, options) {
+      auditBinding(binding, offset);
+      return auditRuns(await get(`/cases/${encodeURIComponent(binding.case_id)}/runs?offset=${offset}&limit=50`, options), binding, offset);
+    },
+    async runAudit(binding, after = 0, options) {
+      auditBinding(binding, after, true);
+      return auditPage(await get(`/runs/${encodeURIComponent(binding.run_id)}/audit?after=${after}&limit=50`, options), binding, after);
     },
     listCases: () => get('/cases'),
     async context(id) {

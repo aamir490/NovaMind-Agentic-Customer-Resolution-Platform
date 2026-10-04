@@ -273,6 +273,14 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .review-status-events { max-height: 18rem; }
 .review-status-events:focus-visible { outline-offset: -2px; }
 
+.audit-workspace { display: grid; gap: var(--space-5); }
+.audit-workspace > .run-notice { margin: 0; }
+.audit-events { list-style: none; margin: var(--space-4) 0; padding: 0; max-height: 36rem; overflow-y: auto; }
+.audit-events:focus-visible { outline-offset: -2px; }
+.audit-pagination { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.audit-run-facts { margin-top: var(--space-4); }
+.audit-workspace button:disabled { cursor: wait; }
+
 @media (min-width: 1600px) {
   .workspace { padding-top: 56px; }
   .workspace-grid { grid-template-columns: minmax(0, 1fr) 320px; }
