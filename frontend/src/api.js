@@ -1,4 +1,4 @@
-// Same-origin authenticated reads and explicit run starts. Decisions remain in the backend.
+// Same-origin authenticated reads, explicit run starts, and explicit human decisions.
 const isText = (value) => typeof value === 'string' && value.trim().length > 0;
 const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
 const isTextList = (value) => Array.isArray(value) && value.every(isText);
@@ -137,6 +137,19 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
           rationale: review.rationale, reviewStatus: review.status };
       });
       return { items, snapshotAt: page.snapshot_at };
+    },
+    async decideReview(instanceId, item, decision, options) {
+      requireResponse(['APPROVE', 'REJECT'].includes(decision), 'human decision');
+      // One explicit POST. A lost response must never trigger an automatic replay.
+      const result = await request(`/runs/${encodeURIComponent(item.runId)}/decision`, {
+        method: 'POST', signal: options?.signal,
+        body: { instance_id: instanceId, case_id: item.caseId, workflow_id: item.workflowId,
+          proposal_id: item.proposalId, review_id: item.reviewId, decision },
+      });
+      const snapshot = runSnapshot(result, { instance_id: instanceId, case_id: item.caseId, run_id: item.runId });
+      requireResponse(snapshot.workflow_id === item.workflowId && snapshot.review?.review_id === item.reviewId
+        && snapshot.review.proposal_id === item.proposalId, 'decision binding');
+      return snapshot;
     },
     async startRun({ instance_id, request_id, case_id, message }) {
       // Exactly one POST per explicit submission; never retry a potentially committed run.
