@@ -1,20 +1,43 @@
 ﻿import { useCallback, useEffect, useRef, useState } from 'react';
 
+import ReviewRunResult from './ReviewRunResult.jsx';
+
+const maxReviewEvents = 64;
+const terminalStatuses = new Set(['REVIEWED', 'FAILED', 'COMPLETED']);
+
+function validateReviewSnapshot(snapshot, item, instanceId, previous) {
+  const bound = snapshot.instance_id === instanceId && snapshot.run_id === item.runId
+    && snapshot.case_id === item.caseId && snapshot.workflow_id === item.workflowId
+    && snapshot.review?.workflow_id === item.workflowId && snapshot.review?.case_id === item.caseId
+    && snapshot.review?.proposal_id === item.proposalId && snapshot.review?.review_id === item.reviewId;
+  const stale = previous && (snapshot.last_sequence < previous.last_sequence
+    || Date.parse(snapshot.updated_at) < Date.parse(previous.updated_at)
+    || (terminalStatuses.has(previous.status) && snapshot.status !== previous.status)
+    || (previous.reviewed_status !== null && snapshot.reviewed_status !== previous.reviewed_status));
+  if (!bound || stale) {
+    const error = new Error('Review tracking could not be verified');
+    error.code = bound ? 'STALE_REVIEW_SNAPSHOT' : 'REVIEW_BINDING_MISMATCH';
+    throw error;
+  }
+}
+
 function sameReview(first, second) {
   return second && ['runId', 'caseId', 'workflowId', 'proposalId', 'reviewId', 'action', 'rationale']
     .every((key) => first[key] === second[key]);
 }
 
 function decisionResult(snapshot, decision) {
+  if (snapshot.status === 'FAILED') return { phase: 'failed',
+    message: 'The resumed workflow failed. Any backend-confirmed human decision is shown separately below. Review the existing records; do not replay the decision.' };
+  if (snapshot.status === 'RESUMING') return { phase: 'accepted',
+    message: 'The same workflow is resuming after human review. Read-only tracking is checking for its final result.' };
   if (snapshot.reviewed_status) {
     const expected = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
-    return { phase: snapshot.reviewed_status === expected ? 'success' : 'stale',
+    return { phase: snapshot.status === 'REVIEWED' && snapshot.reviewed_status === expected ? 'success' : 'stale',
       message: `The backend reports this proposal as ${snapshot.reviewed_status === 'APPROVED' ? 'approved' : 'rejected'}.`
-        + (snapshot.reviewed_status !== expected ? ' This differs from your submitted decision; do not resubmit.' : '')
-        + (snapshot.status === 'FAILED' ? ' The workflow also reported a failure; inspect existing records.' : '') };
+        + (snapshot.reviewed_status !== expected ? ' This differs from your requested decision; do not resubmit.' : '')
+        + (snapshot.status !== 'REVIEWED' ? ' The run has not confirmed the expected REVIEWED status.' : ' The workflow has finished human review.') };
   }
-  if (snapshot.status === 'RESUMING') return { phase: 'accepted',
-    message: 'The decision request is being processed. The recorded review outcome is not yet confirmed. Check its status without resubmitting.' };
   if (snapshot.status === 'REVIEW_REQUIRED') return { phase: 'stale',
     message: 'The workflow still reports review required, but this attempt has no confirmed decision. It may have conflicted with another review. Inspect existing records; do not resubmit automatically.' };
   return { phase: 'uncertain',
@@ -106,7 +129,9 @@ export default function ReviewQueue({ api, identity, active }) {
         message: `Submitting ${decision === 'APPROVE' ? 'approval' : 'rejection'}… Do not submit another decision.` });
       const snapshot = await api.decideReview(instanceId, item, decision, { signal: controller.signal });
       if (controller.signal.aborted) return;
-      publishDecision(item, decision, decisionResult(snapshot, decision));
+      validateReviewSnapshot(snapshot, item, instanceId);
+      publishDecision(item, decision, { ...decisionResult(snapshot, decision), needsHistory: true,
+        tracking: { snapshot, events: [], after: 0, gap: false, trimmed: false } });
       setState((previous) => ({ ...previous, items: previous.items.filter((entry) => entry.runId !== item.runId) }));
       refresh = true;
     } catch (error) {
@@ -128,7 +153,7 @@ export default function ReviewQueue({ api, identity, active }) {
             : 'The backend did not accept this decision request. Refresh the queue before making another explicit decision.' });
         refresh = true;
       } else {
-        publishDecision(item, decision, { phase: 'uncertain',
+        publishDecision(item, decision, { phase: 'uncertain', needsHistory: true,
           message: 'The decision response could not be verified. It may have been accepted. This proposal is locked against resubmission; check its status using a read-only request.' });
       }
     } finally {
@@ -147,16 +172,32 @@ export default function ReviewQueue({ api, identity, active }) {
     decisionRequest.current = controller;
     setBusy(true);
     let refresh = false;
+    let current = record.tracking ?? { snapshot: null, events: [], after: 0, gap: false, trimmed: false };
     publishDecision(item, decision, { phase: 'checking', checks: (record.checks ?? 0) + 1,
-      message: 'Checking the recorded decision. No decision is being submitted…' });
+      message: 'Loading the same run’s status and workflow events using read-only requests…' });
     try {
-      const snapshot = await api.runSnapshot({ instance_id: instanceId, run_id: item.runId, case_id: item.caseId },
-        { signal: controller.signal });
+      const binding = { instance_id: instanceId, run_id: item.runId, case_id: item.caseId };
+      const snapshot = await api.runSnapshot(binding, { signal: controller.signal });
       if (controller.signal.aborted) return;
-      if (snapshot.workflow_id !== item.workflowId || snapshot.review?.review_id !== item.reviewId
-          || snapshot.review?.proposal_id !== item.proposalId) throw new Error('Unverified review binding');
-      const result = decisionResult(snapshot, decision);
-      publishDecision(item, decision, result);
+      validateReviewSnapshot(snapshot, item, instanceId, current.snapshot);
+      current = { ...current, snapshot };
+      publishDecision(item, decision, { tracking: current });
+      let page;
+      do {
+        page = await api.runEvents(binding, current.after, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        validateReviewSnapshot(page.snapshot, item, instanceId, current.snapshot);
+        // The existing API validates run binding and contiguous event sequences.
+        // Retain STATE events only, without tool payloads or diagnostic errors.
+        const events = [...current.events, ...page.events.filter((event) => event.kind === 'STATE')
+          .map((event) => ({ sequence: event.sequence, state: event.state, timestamp: event.timestamp }))];
+        current = { snapshot: page.snapshot, after: page.next_after, events: events.slice(-maxReviewEvents),
+          gap: current.gap || page.gap, trimmed: current.trimmed || events.length > maxReviewEvents };
+        publishDecision(item, decision, { tracking: current });
+      } while (page.has_more);
+      // Drain available events even when the snapshot is already terminal.
+      const result = decisionResult(current.snapshot, decision);
+      publishDecision(item, decision, { ...result, tracking: current, needsHistory: false, canCheck: true });
       refresh = result.phase !== 'accepted';
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -165,9 +206,13 @@ export default function ReviewQueue({ api, identity, active }) {
         setAccessDenied(true);
         setState({ phase: 'denied', items: [], snapshotAt: null });
       }
-      publishDecision(item, decision, { phase: denied ? 'unauthorized' : 'uncertain',
+      const stale = error.status === 409 || ['STALE_REVIEW_SNAPSHOT', 'REVIEW_BINDING_MISMATCH'].includes(error.code);
+      publishDecision(item, decision, { phase: denied ? 'unauthorized' : stale ? 'stale' : 'unavailable',
+        needsHistory: false, canCheck: !denied && error.status !== 404 && !stale,
         message: denied ? 'Access to the review was denied. Confirm an authorized identity before checking existing records.'
-          : 'The recorded outcome could not be verified. The proposal remains locked. Check again later or inspect existing records; do not resubmit.' });
+          : stale ? 'Tracking returned stale or mismatched review data. Updates have stopped and the last verified data remains shown. Inspect existing records; do not resubmit.'
+            : error.status === 404 ? 'This run is no longer available from the server. Its last verified data remains shown. Do not replay the decision.'
+              : 'Run tracking is unavailable. The last verified data remains shown. Retry tracking to read the same run; the decision will not be submitted again.' });
     } finally {
       if (decisionRequest.current === controller) {
         decisionRequest.current = null;
@@ -179,7 +224,8 @@ export default function ReviewQueue({ api, identity, active }) {
 
   useEffect(() => {
     if (!active || !allowed || busy || selected || accessDenied || ['loading', 'denied'].includes(state.phase)) return;
-    const pending = Object.values(decisions).find((record) => record.phase === 'accepted' && (record.checks ?? 0) < 20);
+    const pending = Object.values(decisions).find((record) => (record.phase === 'accepted' || record.needsHistory)
+      && (record.checks ?? 0) < 20);
     if (!pending) return;
     // Bounded, read-only confirmation after HTTP acceptance. Never replay POSTs.
     const timer = setTimeout(() => checkDecision(pending), 1500);
@@ -210,14 +256,16 @@ export default function ReviewQueue({ api, identity, active }) {
     <p className="run-notice" id="review-decision-boundary">Approve or reject a proposal only after assessing its details.
       Approval and rejection record a human review decision. Neither executes the proposed business action.</p>
     {Object.keys(decisions).length > 0 && <section className="review-decisions" aria-labelledby="review-decisions-title">
-      <h3 id="review-decisions-title">Decision status</h3>
+      <h3 id="review-decisions-title">Decision &amp; final run result</h3>
       {Object.values(decisions).map((record) => <div key={record.item.runId} className="resolution-card">
         <p className="case-caption">{record.decision === 'APPROVE' ? 'Approval' : 'Rejection'} request for proposal <code>{record.item.proposalId}</code></p>
-        <p className={['stale', 'uncertain', 'unauthorized', 'rejected'].includes(record.phase) ? 'run-error' : 'run-notice'}
+        <p className={['stale', 'uncertain', 'unauthorized', 'rejected', 'failed', 'unavailable'].includes(record.phase) ? 'run-error' : 'run-notice'}
           role="status" aria-atomic="true">{record.message} No business action is executed by review.</p>
-        {['accepted', 'uncertain', 'stale'].includes(record.phase) && <button type="button" className="button-secondary"
-          disabled={busy || loading || accessDenied || state.phase === 'denied'} onClick={() => checkDecision(record)}>
-          Check decision status
+        <ReviewRunResult record={record} active={active} />
+        {record.canCheck !== false && (record.tracking || ['accepted', 'uncertain', 'stale', 'unavailable'].includes(record.phase))
+          && <button type="button" className="button-secondary"
+          disabled={busy || loading || accessDenied || state.phase === 'denied'} aria-busy={record.phase === 'checking'} onClick={() => checkDecision(record)}>
+          {record.phase === 'checking' ? 'Loading run tracking…' : 'Refresh run tracking'}
         </button>}
       </div>)}
     </section>}
@@ -270,7 +318,7 @@ export default function ReviewQueue({ api, identity, active }) {
             <button type="button" className="button-secondary" disabled={busy || loading || accessDenied || Boolean(selected) || Boolean(locked(item))}
               aria-describedby="review-decision-boundary" onClick={() => setSelected({ item, decision: 'REJECT' })}>Reject</button>
           </div>
-          {locked(item) && <p className="case-caption">Decision controls are locked for this attempt. See Decision status above.</p>}
+          {locked(item) && <p className="case-caption">Decision controls are locked for this attempt. See Decision &amp; final run result above.</p>}
         </>}
       </li>)}
     </ol>}
