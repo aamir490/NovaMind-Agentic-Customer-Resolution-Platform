@@ -19,20 +19,22 @@
     <p className="case-caption">Source excerpts retrieved during this run, separate from the AI-generated response.
       Retrieval does not confirm that the response used or cited each excerpt.</p>
     <p className="run-notice">Retrieved knowledge is untrusted reference material. It does not authorize an action or establish business policy.
-      Deterministic rules and human review remain authoritative.</p>
+      Business rules determine eligibility. Human review records a decision and does not execute an action.</p>
     <p className="case-caption" role="status" aria-atomic="true">{status}</p>
-    {failed && <p className="case-caption">A knowledge retrieval attempt failed. No evidence is available from that attempt.</p>}
-    {unavailable && <p className="case-caption">Some retrieval details are missing or could not be verified and have been withheld.</p>}
-    {incomplete && <p className="case-caption">Event history is incomplete; earlier knowledge evidence may be missing.</p>}
-    {evidence.length > 0 && tracking?.phase === 'error'
-      && <p className="case-caption">Live tracking is stopped. Previously received evidence remains shown.</p>}
+    <div role="status" aria-atomic="true">
+      {failed && <p className="case-caption">A knowledge retrieval attempt failed. No evidence is available from that attempt.</p>}
+      {unavailable && <p className="case-caption">Some retrieval details are missing or could not be verified and have been withheld.</p>}
+      {incomplete && <p className="case-caption">Event history is incomplete; earlier knowledge evidence may be missing.</p>}
+      {evidence.length > 0 && tracking?.phase === 'error'
+        && <p className="case-caption">Live tracking is stopped. Previously received evidence remains shown.</p>}
+    </div>
     {evidence.length > 0 && <ol className="knowledge-evidence-list" aria-label="Retrieved knowledge excerpts in event order" tabIndex={0}>
       {evidence.map((hit) => <li key={`${hit.sequence}:${hit.reference}`} className="resolution-card">
         <h4>{hit.title}</h4>
         <p className="case-caption">Retrieved excerpt · Workflow event #{hit.sequence}</p>
         <blockquote className="knowledge-snippet">{hit.snippet}</blockquote>
         <details>
-          <summary>Source reference</summary>
+          <summary aria-label={`Source reference for ${hit.title}, event ${hit.sequence}`}>Source reference</summary>
           <dl className="case-facts">
             <div><dt>Source</dt><dd><code>{hit.source}</code></dd></div>
             <div><dt>Document ID</dt><dd>{hit.documentId}</dd></div>

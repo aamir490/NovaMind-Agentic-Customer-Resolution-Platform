@@ -30,7 +30,7 @@ function decisionResult(snapshot, decision) {
   if (snapshot.status === 'FAILED') return { phase: 'failed',
     message: 'The resumed workflow failed. Any backend-confirmed human decision is shown separately below. Review the existing records; do not replay the decision.' };
   if (snapshot.status === 'RESUMING') return { phase: 'accepted',
-    message: 'The same workflow is resuming after human review. Read-only tracking is checking for its final result.' };
+    message: 'The last confirmed run status is RESUMING. A final reviewed result is not yet confirmed.' };
   if (snapshot.reviewed_status) {
     const expected = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
     return { phase: snapshot.status === 'REVIEWED' && snapshot.reviewed_status === expected ? 'success' : 'stale',
@@ -54,7 +54,20 @@ export default function ReviewQueue({ api, identity, active }) {
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const focusTarget = useRef(null);
   const instanceId = identity?.instance_id;
+
+  useEffect(() => {
+    if (active && focusTarget.current) {
+      document.getElementById(focusTarget.current)?.focus();
+      focusTarget.current = null;
+    }
+  }, [active, selected, decisions]);
+
+  function selectDecision(item, decision) {
+    focusTarget.current = `confirm-review-${item.runId}`;
+    setSelected({ item, decision });
+  }
 
   const loadQueue = useCallback(async () => {
     if (!allowed || accessDenied || request.current || decisionRequest.current) return;
@@ -111,6 +124,7 @@ export default function ReviewQueue({ api, identity, active }) {
     decisionRequest.current = controller;
     setBusy(true);
     setSelected(null);
+    focusTarget.current = `decision-status-${item.runId}`;
     publishDecision(item, decision, { phase: 'checking', message: 'Checking that the selected proposal is still pending…' });
     let posted = false;
     let refresh = false;
@@ -165,7 +179,7 @@ export default function ReviewQueue({ api, identity, active }) {
     }
   }
 
-  async function checkDecision(record) {
+  async function checkDecision(record, automatic = false) {
     if (!allowed || accessDenied || decisionRequest.current || request.current) return;
     const { item, decision } = record;
     const controller = new AbortController();
@@ -173,15 +187,17 @@ export default function ReviewQueue({ api, identity, active }) {
     setBusy(true);
     let refresh = false;
     let current = record.tracking ?? { snapshot: null, events: [], after: 0, gap: false, trimmed: false };
-    publishDecision(item, decision, { phase: 'checking', checks: (record.checks ?? 0) + 1,
-      message: 'Loading the same run’s status and workflow events using read-only requests…' });
+    // Background polling should announce outcome changes, not each loading cycle.
+    publishDecision(item, decision, { phase: automatic ? record.phase : 'checking', checkingRun: true,
+      checks: (record.checks ?? 0) + 1,
+      message: automatic ? record.message : 'Loading the same run’s status and workflow events using read-only requests…' });
     try {
       const binding = { instance_id: instanceId, run_id: item.runId, case_id: item.caseId };
       const snapshot = await api.runSnapshot(binding, { signal: controller.signal });
       if (controller.signal.aborted) return;
       validateReviewSnapshot(snapshot, item, instanceId, current.snapshot);
       current = { ...current, snapshot };
-      publishDecision(item, decision, { tracking: current });
+      publishDecision(item, decision, { tracking: current, ...(automatic ? decisionResult(snapshot, decision) : {}) });
       let page;
       do {
         page = await api.runEvents(binding, current.after, { signal: controller.signal });
@@ -193,7 +209,7 @@ export default function ReviewQueue({ api, identity, active }) {
           .map((event) => ({ sequence: event.sequence, state: event.state, timestamp: event.timestamp }))];
         current = { snapshot: page.snapshot, after: page.next_after, events: events.slice(-maxReviewEvents),
           gap: current.gap || page.gap, trimmed: current.trimmed || events.length > maxReviewEvents };
-        publishDecision(item, decision, { tracking: current });
+        publishDecision(item, decision, { tracking: current, ...(automatic ? decisionResult(page.snapshot, decision) : {}) });
       } while (page.has_more);
       // Drain available events even when the snapshot is already terminal.
       const result = decisionResult(current.snapshot, decision);
@@ -217,6 +233,7 @@ export default function ReviewQueue({ api, identity, active }) {
       if (decisionRequest.current === controller) {
         decisionRequest.current = null;
         setBusy(false);
+        publishDecision(item, decision, { checkingRun: false });
         if (refresh && !controller.signal.aborted) await loadQueue();
       }
     }
@@ -228,7 +245,7 @@ export default function ReviewQueue({ api, identity, active }) {
       && (record.checks ?? 0) < 20);
     if (!pending) return;
     // Bounded, read-only confirmation after HTTP acceptance. Never replay POSTs.
-    const timer = setTimeout(() => checkDecision(pending), 1500);
+    const timer = setTimeout(() => checkDecision(pending, true), 1500);
     return () => clearTimeout(timer);
   }, [active, allowed, busy, selected, accessDenied, state.phase, decisions]);
 
@@ -249,8 +266,8 @@ export default function ReviewQueue({ api, identity, active }) {
     <div className="case-panel-heading">
       <div><p className="eyebrow">Human review</p><h2 id="review-queue-title">Pending review queue</h2></div>
       <button type="button" className="button-secondary" onClick={loadQueue}
-        disabled={loading || busy || accessDenied || state.phase === 'denied'} aria-busy={loading} aria-describedby="review-queue-status">
-        {loading ? 'Loading reviews...' : 'Refresh reviews'}
+        disabled={loading || busy || Boolean(selected) || accessDenied || state.phase === 'denied'} aria-busy={loading} aria-describedby="review-queue-status">
+        {loading ? 'Loading reviews…' : 'Refresh reviews'}
       </button>
     </div>
     <p className="run-notice" id="review-decision-boundary">Approve or reject a proposal only after assessing its details.
@@ -260,17 +277,20 @@ export default function ReviewQueue({ api, identity, active }) {
       {Object.values(decisions).map((record) => <div key={record.item.runId} className="resolution-card">
         <p className="case-caption">{record.decision === 'APPROVE' ? 'Approval' : 'Rejection'} request for proposal <code>{record.item.proposalId}</code></p>
         <p className={['stale', 'uncertain', 'unauthorized', 'rejected', 'failed', 'unavailable'].includes(record.phase) ? 'run-error' : 'run-notice'}
+          id={`decision-status-${record.item.runId}`} tabIndex={-1}
           role="status" aria-atomic="true">{record.message} No business action is executed by review.</p>
         <ReviewRunResult record={record} active={active} />
         {record.canCheck !== false && (record.tracking || ['accepted', 'uncertain', 'stale', 'unavailable'].includes(record.phase))
           && <button type="button" className="button-secondary"
-          disabled={busy || loading || accessDenied || state.phase === 'denied'} aria-busy={record.phase === 'checking'} onClick={() => checkDecision(record)}>
-          {record.phase === 'checking' ? 'Loading run tracking…' : 'Refresh run tracking'}
+          disabled={busy || loading || Boolean(selected) || accessDenied || state.phase === 'denied'} aria-busy={Boolean(record.checkingRun)}
+          aria-describedby={`decision-status-${record.item.runId}`} onClick={() => checkDecision(record)}>
+          {record.checkingRun ? 'Loading run tracking…' : 'Refresh run tracking'}
         </button>}
       </div>)}
     </section>}
     <p id="review-queue-status" className="case-caption" role="status" aria-atomic="true">
-      {loading ? 'Checking the backend for workflows awaiting human review...'
+      {loading ? 'Checking the backend for workflows awaiting human review…'
+        : accessDenied || state.phase === 'denied' ? 'Review access is unavailable. Confirm an authorized reviewer or administrator identity.'
         : state.phase === 'ready' ? `${state.items.length} ${state.items.length === 1 ? 'workflow' : 'workflows'} awaiting review at the last refresh.`
           : 'Pending reviews could not be loaded. No queue data is shown.'}
     </p>
@@ -284,7 +304,7 @@ export default function ReviewQueue({ api, identity, active }) {
     {state.items.length > 0 && <ol className="review-queue-list" aria-label="Workflows awaiting human review">
       {state.items.map((item) => <li key={item.runId} className="resolution-card">
         <div className="case-panel-heading">
-          <h3>{item.caseSubject}</h3><span className="case-status">Waiting for human review</span>
+          <h3 id={`review-case-${item.runId}`}>{item.caseSubject}</h3><span className="case-status">Waiting for human review</span>
         </div>
         <h4>Proposed action</h4>
         <p className="proposal-action">{item.action}</p>
@@ -302,21 +322,26 @@ export default function ReviewQueue({ api, identity, active }) {
           <div><dt>Run updated at (server)</dt><dd><time dateTime={item.updatedAt}>{item.updatedAt}</time></dd></div>
         </dl>
         {selected?.item.runId === item.runId ? <div className="review-confirmation">
-          <p id={`confirm-review-${item.runId}`}>Confirm {selected.decision === 'APPROVE' ? 'approval' : 'rejection'} of the proposed {item.action}
+          <p id={`confirm-review-${item.runId}`} tabIndex={-1}>Confirm {selected.decision === 'APPROVE' ? 'approval' : 'rejection'} of the proposed {item.action}
             {' '}for proposal <code>{item.proposalId}</code>. This records your decision without executing the action.</p>
           <div className="review-decision-actions">
-            <button type="button" autoFocus disabled={busy || loading || accessDenied}
+            <button type="button" disabled={busy || loading || accessDenied}
               aria-describedby={`confirm-review-${item.runId}`} onClick={submitDecision}>
               {selected.decision === 'APPROVE' ? 'Confirm approval' : 'Confirm rejection'}
             </button>
-            <button type="button" className="button-secondary" disabled={busy} onClick={() => setSelected(null)}>Cancel</button>
+            <button type="button" className="button-secondary" disabled={busy} onClick={() => {
+              focusTarget.current = `${selected.decision}-${item.runId}`;
+              setSelected(null);
+            }}>Cancel</button>
           </div>
         </div> : <>
           <div className="review-decision-actions">
             <button type="button" disabled={busy || loading || accessDenied || Boolean(selected) || Boolean(locked(item))}
-              aria-describedby="review-decision-boundary" onClick={() => setSelected({ item, decision: 'APPROVE' })}>Approve</button>
+              id={`APPROVE-${item.runId}`} aria-describedby={`review-case-${item.runId} review-decision-boundary`}
+              onClick={() => selectDecision(item, 'APPROVE')}>Approve</button>
             <button type="button" className="button-secondary" disabled={busy || loading || accessDenied || Boolean(selected) || Boolean(locked(item))}
-              aria-describedby="review-decision-boundary" onClick={() => setSelected({ item, decision: 'REJECT' })}>Reject</button>
+              id={`REJECT-${item.runId}`} aria-describedby={`review-case-${item.runId} review-decision-boundary`}
+              onClick={() => selectDecision(item, 'REJECT')}>Reject</button>
           </div>
           {locked(item) && <p className="case-caption">Decision controls are locked for this attempt. See Decision &amp; final run result above.</p>}
         </>}

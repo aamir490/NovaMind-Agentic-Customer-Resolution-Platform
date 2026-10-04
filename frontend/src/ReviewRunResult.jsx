@@ -17,11 +17,11 @@ export default function ReviewRunResult({ record, active }) {
       && <p className="run-error">The recorded decision differs from your request. Another review may have been recorded; do not resubmit.</p>}
     {phase === 'accepted' && <p className="case-caption" role="status">{!active
       ? 'Automatic tracking is paused while this view is hidden.'
-      : (record.checks ?? 0) >= 20 ? 'Automatic checks have reached their limit. The run is still pending. Refresh run tracking to check again.'
-        : 'Waiting for the resumed workflow to finish. Status checks only read this run.'}</p>}
+      : (record.checks ?? 0) >= 20 && !record.checkingRun ? 'Automatic checks have reached their limit. The last confirmed status is RESUMING. Refresh run tracking to check again.'
+        : 'A final result has not yet been confirmed. Status checks only read this run.'}</p>}
     {snapshot && <p className="case-caption">Last confirmed update (server): <time dateTime={snapshot.updated_at}>{snapshot.updated_at}</time>.</p>}
     <details>
-      <summary>Bound review identifiers</summary>
+      <summary aria-label={`Bound review identifiers for proposal ${item.proposalId}`}>Bound review identifiers</summary>
       <dl className="case-facts run-identifiers">
         <div><dt>Case ID</dt><dd>{item.caseId}</dd></div>
         <div><dt>Run ID</dt><dd>{item.runId}</dd></div>
@@ -30,7 +30,7 @@ export default function ReviewRunResult({ record, active }) {
         <div><dt>Review ID</dt><dd>{item.reviewId}</dd></div>
       </dl>
     </details>
-    <h4>{terminal ? 'Final workflow result' : 'Workflow result pending'}</h4>
+    <h4>{terminal ? 'Final workflow result' : 'Workflow result not confirmed'}</h4>
     {terminal ? <>
       <p className={snapshot.status === 'FAILED' ? 'run-error' : 'case-caption'}>{snapshot.status === 'FAILED'
         ? 'The workflow failed. A failed run does not confirm whether a human decision was recorded; see the confirmed decision above.'
@@ -46,8 +46,12 @@ export default function ReviewRunResult({ record, active }) {
     <h4>Run status history</h4>
     <p className="case-caption">Backend-reported status events for this same run, including its earlier history.</p>
     {(tracking?.gap || tracking?.trimmed) && <p className="case-caption">History is incomplete. Earlier transitions may be missing; only retained events are shown.</p>}
-    {!tracking?.events.length ? <p className="case-caption">{phase === 'checking' || record.needsHistory
-      ? 'Loading status events...' : 'No status events are available in the received history.'}</p>
+    {!tracking?.events.length ? <p className="case-caption">{record.checkingRun
+      ? 'Loading status events…' : record.needsHistory
+        ? 'Status history has not been loaded yet. Read-only tracking will check when this view is active and controls are available.'
+        : ['unavailable', 'unauthorized', 'stale'].includes(phase)
+          ? 'No verified status history is available. See the tracking status above.'
+          : 'No status events are available in the received history.'}</p>
       : <ol className="run-events review-status-events" aria-label={`Status history for run ${item.runId}`} tabIndex={0}>
         {tracking.events.map((event) => <li key={event.sequence}>
           <div className="run-event-heading"><strong>{event.state}</strong><span className="badge">Event #{event.sequence}</span></div>
