@@ -202,6 +202,66 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
       auditBinding(binding, after, true);
       return auditPage(await get(`/runs/${encodeURIComponent(binding.run_id)}/audit?after=${after}&limit=50`, options), binding, after);
     },
+    // -----------------------------------------------------------------
+    // Customer portal — Phase 17B.2
+    // -----------------------------------------------------------------
+
+    async listCatalog({ availableOnly = false } = {}) {
+      const params = availableOnly ? '?available_only=true' : '';
+      const products = await get(`/catalog${params}`);
+      requireResponse(Array.isArray(products) && products.length <= 1000, 'catalog list');
+      return products.map((p) => {
+        requireResponse(isUuid(p?.id) && isText(p.sku) && isText(p.name) && isText(p.description)
+          && typeof p.available === 'boolean'
+          && p.unit_price != null && isText(p.unit_price.currency)
+          && typeof p.unit_price.amount === 'string' && p.unit_price.amount.length <= 20,
+          'catalog product');
+        return { id: p.id, sku: p.sku, name: p.name, description: p.description,
+          available: p.available,
+          unit_price: { amount: p.unit_price.amount, currency: p.unit_price.currency } };
+      });
+    },
+
+    async getCatalogProduct(id) {
+      requireResponse(isUuid(id), 'product id');
+      const p = await get(`/catalog/${encodeURIComponent(id)}`);
+      requireResponse(isUuid(p?.id) && isText(p.sku) && isText(p.name) && isText(p.description)
+        && typeof p.available === 'boolean'
+        && p.unit_price != null && isText(p.unit_price.currency)
+        && typeof p.unit_price.amount === 'string', 'catalog product');
+      return { id: p.id, sku: p.sku, name: p.name, description: p.description,
+        available: p.available,
+        unit_price: { amount: p.unit_price.amount, currency: p.unit_price.currency } };
+    },
+
+    async createMyOrder(items) {
+      // SECURITY: customer_id is NEVER sent — the backend derives it from the
+      // authenticated identity. Only items (sku + quantity) are accepted.
+      requireResponse(Array.isArray(items) && items.length >= 1 && items.length <= 100,
+        'order items');
+      for (const item of items) {
+        requireResponse(isText(item?.sku) && Number.isSafeInteger(item.quantity)
+          && item.quantity >= 1 && item.quantity <= 1000, 'order item');
+      }
+      const body = { items: items.map(({ sku, quantity }) => ({ sku, quantity })) };
+      const order = await request('/my/orders', { method: 'POST', body });
+      requireResponse(isUuid(order?.id) && isUuid(order.customer_id)
+        && Array.isArray(order.items) && order.items.length >= 1, 'created order');
+      return { id: order.id, customer_id: order.customer_id,
+        items: order.items.map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })) };
+    },
+
+    async listMyOrders() {
+      const orders = await get('/my/orders');
+      requireResponse(Array.isArray(orders) && orders.length <= 10000, 'my orders list');
+      return orders.map((order) => {
+        requireResponse(isUuid(order?.id) && isUuid(order.customer_id)
+          && Array.isArray(order.items) && order.items.length >= 1, 'my order');
+        return { id: order.id, customer_id: order.customer_id,
+          items: order.items.map((it) => ({ sku: it.sku, name: it.name, quantity: it.quantity })) };
+      });
+    },
+
     listCases: () => get('/cases'),
     async context(id) {
       const supportCase = await get(`/cases/${encodeURIComponent(id)}`);

@@ -6,9 +6,10 @@ import os
 from pathlib import Path
 import re
 
+from backend.app.domain import Customer
 from backend.app.gemini import GeminiProvider
 from backend.app.main import create_app
-from backend.app.security import LocalAuthenticationProvider, LocalCredential
+from backend.app.security import LocalAuthenticationProvider, LocalCredential, Role
 
 
 def _unique(pairs):
@@ -23,7 +24,7 @@ def _unique(pairs):
 def _authentication_provider():
     location = os.environ.get("NOVAMIND_AUTH_FILE", "")
     if not location:
-        return None
+        return None, ()
     try:
         path = Path(location)
         if not path.is_absolute():
@@ -37,10 +38,21 @@ def _authentication_provider():
             raise ValueError("Invalid credential list")
         credentials = tuple(LocalCredential.model_validate(item) for item in records)
         provider = LocalAuthenticationProvider(credentials)
+        # For every CUSTOMER credential, seed a deterministic Customer domain
+        # record using the exact customer_id declared in the identity.
+        # The name is a generic demo label; customer names are not part of
+        # authentication configuration and must not be added to credentials.
+        # A seeded record does NOT grant authentication — the bearer token is
+        # still required for every request.
+        startup_customers = tuple(
+            Customer(id=credential.identity.customer_id, name="Demo Customer")
+            for credential in credentials
+            if credential.identity.role == Role.CUSTOMER
+        )
     except Exception:
         # Never put credentials, file paths, or Pydantic input excerpts in logs.
         raise RuntimeError("Container authentication configuration is invalid") from None
-    return provider
+    return provider, startup_customers
 
 
 def _gemini_provider():
@@ -63,11 +75,12 @@ def _gemini_provider():
 
 def create_container_app():
     """Absent configuration stays default-deny; invalid configuration stops startup."""
-    auth_provider = _authentication_provider()
+    auth_provider, startup_customers = _authentication_provider()
     provider = _gemini_provider()
     try:
         app = create_app(auth_provider=auth_provider,
-                         local_provider_factory=(lambda: provider) if provider is not None else None)
+                         local_provider_factory=(lambda: provider) if provider is not None else None,
+                         startup_customers=startup_customers)
     except Exception:
         if provider is not None:
             provider.close()

@@ -6,9 +6,11 @@ import AIWorkspace from './AIWorkspace.jsx';
 import ReviewQueue from './ReviewQueue.jsx';
 import AuditWorkspace from './AuditWorkspace.jsx';
 import DiagnosticsWorkspace from './DiagnosticsWorkspace.jsx';
+import CustomerPortal from './CustomerPortal.jsx';
 import { createApi } from './api.js';
 
-const views = [
+// Internal staff views — never shown to CUSTOMER role.
+const staffViews = [
   { id: 'dashboard', label: 'Dashboard', title: 'Dashboard',
     description: 'A place for your workspace overview.',
     placeholder: 'Dashboard summaries are not available yet. Open Cases to review a support case.',
@@ -38,7 +40,12 @@ function App() {
   const [identityStatus, setIdentityStatus] = useState('signed-out');
   const [identityMessage, setIdentityMessage] = useState('Enter your existing local access token to confirm your identity.');
   const identityClient = useRef(null);
-  const view = views.find((entry) => entry.id === activeView);
+
+  // Derive whether this session is a customer; drives what is shown/hidden.
+  const isCustomer = session?.identity?.role === 'CUSTOMER';
+
+  // Staff view state — only relevant when not a customer.
+  const view = staffViews.find((entry) => entry.id === activeView) ?? staffViews[0];
 
   function clearIdentity() {
     identityClient.current?.dispose();
@@ -125,19 +132,37 @@ function App() {
           <span>NovaMind<span className="brand-caption">Customer resolution</span></span>
         </a>
         <nav className="workspace-nav" aria-label="Main navigation">
-          <p className="nav-label">Workspace</p>
-          <div className="nav-items">
-            {views.map((entry) => <button key={entry.id} type="button" className="nav-item"
-              aria-current={activeView === entry.id ? 'page' : undefined}
-              aria-controls="workspace" onClick={() => setActiveView(entry.id)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
-                strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-                <path d={entry.icon} />
-              </svg>
-              {entry.label}
-              {activeView === entry.id && <span className="nav-indicator" aria-hidden="true" />}
-            </button>)}
-          </div>
+          {isCustomer ? (
+            <>
+              <p className="nav-label">My account</p>
+              <div className="nav-items">
+                <span className="nav-item nav-item--customer-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+                    strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                  </svg>
+                  Customer portal
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="nav-label">Workspace</p>
+              <div className="nav-items">
+                {staffViews.map((entry) => <button key={entry.id} type="button" className="nav-item"
+                  aria-current={activeView === entry.id ? 'page' : undefined}
+                  aria-controls="workspace" onClick={() => setActiveView(entry.id)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+                    strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                    <path d={entry.icon} />
+                  </svg>
+                  {entry.label}
+                  {activeView === entry.id && <span className="nav-indicator" aria-hidden="true" />}
+                </button>)}
+              </div>
+            </>
+          )}
         </nav>
         <div className="sidebar-context">
           <span className="context-symbol" aria-hidden="true">N</span>
@@ -146,7 +171,7 @@ function App() {
       </aside>
       <div className="app-body">
         <header className="topbar">
-          <p className="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span>{view.label}</p>
+          <p className="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span>{isCustomer ? 'Customer portal' : view.label}</p>
           <span className="environment-label">Local environment</span>
         </header>
         <main id="workspace" className="workspace" tabIndex={-1}>
@@ -183,55 +208,62 @@ function App() {
           </section>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">Customer resolution</p>
-              <h1 aria-live="polite">{view.title}</h1>
-              <p className="intro">{view.description}</p>
+              <p className="eyebrow">{isCustomer ? 'NovaMind' : 'Customer resolution'}</p>
+              <h1 aria-live="polite">{isCustomer ? 'Customer portal' : view.title}</h1>
+              <p className="intro">{isCustomer ? 'Browse products, place a demo order, and track your orders.' : view.description}</p>
             </div>
-            <span className="badge">{['cases', 'audit', 'diagnostics'].includes(activeView) ? 'Read-only workspace' : activeView === 'reviews' ? 'Human review' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
+            <span className="badge">{isCustomer ? 'Customer portal' : ['cases', 'audit', 'diagnostics'].includes(activeView) ? 'Read-only workspace' : activeView === 'reviews' ? 'Human review' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
           </div>
-          {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
-            <p className="eyebrow">{view.label}</p>
-            <h2 id="placeholder-title">This view is not connected yet.</h2>
-            <p>{view.placeholder}</p>
-          </section>}
-          <div hidden={activeView !== 'ai-workspace'}>
-            <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
-          </div>
-          <div hidden={activeView !== 'reviews'}>
-            <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity} active={activeView === 'reviews'} />
-          </div>
-          {activeView === 'audit' && <AuditWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
-          {activeView === 'diagnostics' && <DiagnosticsWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
-          {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
-          <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
-            <CaseReview key={sessionVersion} api={session?.api} />
-            <aside className="workspace-rail" aria-label="Workspace information">
-              <section className="connection-panel" aria-labelledby="connection-title">
-                <div className="panel-heading">
-                  <span className="panel-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="4" y="4" width="16" height="6" rx="2" />
-                      <rect x="4" y="14" width="16" height="6" rx="2" />
-                      <path d="M8 7h.01M8 17h.01M12 7h5M12 17h5" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <div><p className="eyebrow">Connection</p><h2 id="connection-title">Local API</h2></div>
-                </div>
-                <p className={`status ${health}`} role="status" aria-live="polite">{messages[health]}</p>
-                <button className="button-secondary" onClick={checkHealth} disabled={health === 'checking'}>
-                  {health === 'checking' ? 'Checking…' : 'Check local API'}
-                </button>
-              </section>
-              <section className="guidance-panel" aria-labelledby="boundary-title">
-                <p className="eyebrow">Review boundary</p>
-                <h2 id="boundary-title">Evidence before action.</h2>
-                <p>Eligibility is not authorization. Approval is not execution.</p>
-                <span className="guidance-rule" aria-hidden="true" />
-                <p className="footnote">This workspace supports read-only assessment. No business action is performed here.</p>
-              </section>
-            </aside>
-          </div>
-          <footer className="workspace-footer"><span>NovaMind<span aria-hidden="true"> / </span>Customer Resolution Platform</span><span>{activeView === 'cases' ? 'Local case review' : 'Local workspace'}</span></footer>
+          {/* Customer portal — shown only to CUSTOMER role */}
+          {isCustomer && (
+            <CustomerPortal key={sessionVersion} api={session.api} identity={session.identity} />
+          )}
+          {/* Staff workspace — shown only to non-CUSTOMER roles */}
+          {!isCustomer && <>
+            {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
+              <p className="eyebrow">{view.label}</p>
+              <h2 id="placeholder-title">This view is not connected yet.</h2>
+              <p>{view.placeholder}</p>
+            </section>}
+            <div hidden={activeView !== 'ai-workspace'}>
+              <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
+            </div>
+            <div hidden={activeView !== 'reviews'}>
+              <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity} active={activeView === 'reviews'} />
+            </div>
+            {activeView === 'audit' && <AuditWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
+            {activeView === 'diagnostics' && <DiagnosticsWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
+            {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
+            <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
+              <CaseReview key={sessionVersion} api={session?.api} />
+              <aside className="workspace-rail" aria-label="Workspace information">
+                <section className="connection-panel" aria-labelledby="connection-title">
+                  <div className="panel-heading">
+                    <span className="panel-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="4" y="4" width="16" height="6" rx="2" />
+                        <rect x="4" y="14" width="16" height="6" rx="2" />
+                        <path d="M8 7h.01M8 17h.01M12 7h5M12 17h5" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    <div><p className="eyebrow">Connection</p><h2 id="connection-title">Local API</h2></div>
+                  </div>
+                  <p className={`status ${health}`} role="status" aria-live="polite">{messages[health]}</p>
+                  <button className="button-secondary" onClick={checkHealth} disabled={health === 'checking'}>
+                    {health === 'checking' ? 'Checking…' : 'Check local API'}
+                  </button>
+                </section>
+                <section className="guidance-panel" aria-labelledby="boundary-title">
+                  <p className="eyebrow">Review boundary</p>
+                  <h2 id="boundary-title">Evidence before action.</h2>
+                  <p>Eligibility is not authorization. Approval is not execution.</p>
+                  <span className="guidance-rule" aria-hidden="true" />
+                  <p className="footnote">This workspace supports read-only assessment. No business action is performed here.</p>
+                </section>
+              </aside>
+            </div>
+          </>}
+          <footer className="workspace-footer"><span>NovaMind<span aria-hidden="true"> / </span>Customer Resolution Platform</span><span>{isCustomer ? 'Customer portal' : activeView === 'cases' ? 'Local case review' : 'Local workspace'}</span></footer>
         </main>
       </div>
     </div>

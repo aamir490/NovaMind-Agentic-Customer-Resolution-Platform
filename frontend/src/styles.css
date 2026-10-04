@@ -363,3 +363,81 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* =====================================================================
+   Customer Portal — Phase 17B.2
+   Reuses design tokens from the base system; adds customer-facing styles.
+   ===================================================================== */
+
+/* Sidebar: customer label item (non-interactive) */
+.nav-item--customer-label { cursor: default; color: var(--accent-hover); border-color: #34564d; background: var(--accent-surface); pointer-events: none; }
+
+/* Portal sub-navigation (Catalog / My Orders tabs) */
+.portal-subnav { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); padding: var(--space-2); border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); }
+.portal-subnav-item { display: flex; align-items: center; gap: var(--space-2); flex: 1; justify-content: center; min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 550; cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
+.portal-subnav-item:hover:not(:disabled) { background: var(--surface-raised); color: var(--text-primary); }
+.portal-subnav-item--active { border-color: #34564d; background: var(--accent-surface); color: var(--accent-hover); }
+
+/* Catalog grid */
+.customer-catalog { display: grid; gap: var(--space-5); }
+.catalog-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.catalog-header h2 { margin: 0; }
+.catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--space-4); list-style: none; margin: 0; padding: 0; }
+.catalog-card { display: flex; flex-direction: column; justify-content: space-between; padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-panel); transition: border-color 120ms ease; }
+.catalog-card:hover { border-color: var(--border-strong); }
+.catalog-card--unavailable { opacity: 0.65; }
+.catalog-card--unavailable:hover { border-color: var(--border); }
+.catalog-card-body { min-width: 0; }
+.catalog-card-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.catalog-sku { color: var(--text-muted); font-family: ui-monospace, monospace; font-size: 11px; overflow-wrap: anywhere; }
+.catalog-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+.catalog-badge--available { border: 1px solid #34564d; background: var(--accent-surface); color: var(--accent-hover); }
+.catalog-badge--unavailable { border: 1px solid var(--border); background: var(--surface-raised); color: var(--text-muted); }
+.catalog-card-name { margin: 0 0 var(--space-3); font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.catalog-card-description { margin: 0 0 var(--space-4); color: var(--text-secondary); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.catalog-card-price { margin: 0; }
+.catalog-card-price strong { font-size: 18px; color: var(--text-primary); letter-spacing: -0.02em; }
+.catalog-card-action { display: flex; align-items: flex-end; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.catalog-qty-label { flex: 0 0 90px; margin: 0; font-size: 11px; }
+.catalog-qty-label input { min-height: 38px; padding: 7px 8px; text-align: center; }
+.catalog-card-action > button { flex: 1; }
+
+/* Place order */
+.place-order { display: grid; gap: var(--space-5); }
+.order-form-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.order-form-header h2 { margin: 0; }
+.order-form { display: grid; gap: var(--space-4); }
+.order-form fieldset { margin: 0; }
+.order-ownership-note { margin-top: var(--space-3); }
+.order-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.order-success { display: grid; justify-items: center; gap: var(--space-4); padding: var(--space-7) var(--space-5); border: 1px solid #34564d; border-radius: var(--radius); background: var(--surface-panel); text-align: center; }
+.order-success-icon { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid #34564d; border-radius: 14px; background: var(--accent-surface); color: var(--accent); }
+.order-success h2 { margin: 0; color: var(--accent); }
+.order-success p { max-width: 480px; margin: 0; color: var(--text-secondary); }
+.order-success-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: center; }
+.order-summary-facts { text-align: left; width: 100%; max-width: 480px; }
+.order-id { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+
+/* My orders */
+.my-orders { display: grid; gap: var(--space-5); }
+.orders-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.orders-header h2 { margin: 0; }
+.orders-list { display: grid; gap: var(--space-4); list-style: none; margin: 0; padding: 0; }
+.order-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }
+.order-row-body { flex: 1 1 0; min-width: 0; }
+.order-row-items { display: grid; gap: var(--space-1); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.order-row-item { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; color: var(--text-secondary); font-size: 13px; }
+.order-row-item strong { color: var(--text-primary); }
+.order-detail-btn { flex-shrink: 0; }
+.order-detail { display: grid; gap: var(--space-5); }
+.order-items-heading { margin: var(--space-5) 0 var(--space-4); font-size: 14px; }
+.order-detail-note { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+
+/* Shared customer state components */
+.customer-portal { display: grid; gap: var(--space-5); }
+.customer-notice { margin: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: 8px; background: var(--surface-panel); color: var(--text-secondary); font-size: 13px; }
+.customer-error { margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid #694343; border-radius: 6px; background: #302226; color: var(--error); overflow-wrap: anywhere; font-size: 13px; }
+.customer-empty { display: grid; justify-items: center; align-content: center; min-height: 240px; padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-panel); text-align: center; }
+.customer-empty-icon { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: var(--space-5); border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); color: var(--text-muted); }
+.customer-empty h3 { margin-bottom: var(--space-3); font-size: 16px; }
+.customer-empty p { max-width: 430px; margin: 0; color: var(--text-muted); font-size: 13px; }

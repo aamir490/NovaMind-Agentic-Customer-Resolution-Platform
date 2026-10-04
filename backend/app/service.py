@@ -25,6 +25,31 @@ class CaseService:
         self._cases: dict[UUID, SupportCase] = {}
         self._lock = RLock()
 
+    def seed_customer(self, customer: Customer) -> None:
+        """
+        Insert a pre-constructed Customer record at application startup.
+
+        Intended exclusively for deterministic demo / local-dev initialisation
+        driven by trusted startup code (create_app, container bootstrap).
+        Must never be called from an HTTP route handler or any path reachable
+        by external request data.
+
+        Duplicate handling:
+        - Same id, same record  → silent no-op (idempotent restart).
+        - Same id, different record → raises ValueError to prevent silent
+          corruption of an already-seeded identity.
+        """
+        with self._lock:
+            existing = self._customers.get(customer.id)
+            if existing is not None:
+                if existing != customer:
+                    raise ValueError(
+                        f"Startup seed conflict: customer {customer.id} already exists "
+                        "with different data"
+                    )
+                return  # idempotent no-op
+            self._customers[customer.id] = customer
+
     def create_customer(self, request: CustomerCreate) -> Customer:
         with self._lock:
             customer = Customer(id=uuid4(), name=request.name)

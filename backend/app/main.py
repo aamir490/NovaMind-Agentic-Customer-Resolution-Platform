@@ -24,6 +24,7 @@ from .catalog import CatalogService
 from .catalog_routes import router as catalog_router
 from .customer_orders import CustomerOrderService
 from .customer_order_routes import router as customer_order_router
+from .domain import Customer
 
 
 class HealthResponse(BaseModel):
@@ -38,7 +39,8 @@ def health() -> HealthResponse:
 
 def create_app(*, auth_provider: AuthenticationProvider | None = None,
                observer: LocalObserver | None = None, local_provider_factory: Callable[[], LLMProvider] | None = None,
-               conversation_store: ConversationStore | None = None) -> FastAPI:
+               conversation_store: ConversationStore | None = None,
+               startup_customers: tuple[Customer, ...] = ()) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -53,6 +55,12 @@ def create_app(*, auth_provider: AuthenticationProvider | None = None,
         lifespan=lifespan,
     )
     app.state.case_service = CaseService()
+    # Seed deterministic startup customers before the app begins serving requests.
+    # This is the only authorised call site for seed_customer(); no HTTP route
+    # may call it. A seeded record does not itself grant authentication — a valid
+    # bearer token is still required for every request.
+    for customer in startup_customers:
+        app.state.case_service.seed_customer(customer)
     app.state.business_operations = BusinessOperations(app.state.case_service)
     app.state.proposal_service = ProposalService(app.state.case_service)
     app.state.local_tools = LocalTools(
