@@ -8,6 +8,7 @@ import re
 
 from backend.app.domain import Customer
 from backend.app.gemini import GeminiProvider
+from backend.app.groq import GroqProvider
 from backend.app.main import create_app
 from backend.app.security import LocalAuthenticationProvider, LocalCredential, Role
 
@@ -73,10 +74,28 @@ def _gemini_provider():
         raise RuntimeError("Container Gemini configuration is invalid") from None
 
 
+def _llm_provider():
+    selected = os.environ.get("NOVAMIND_LLM_PROVIDER")
+    if selected is None:
+        # Preserve existing Gemini opt-in behavior; Groq is never auto-selected.
+        return _gemini_provider()
+    if selected == "gemini":
+        provider = _gemini_provider()
+        if provider is None:
+            raise RuntimeError("Container Gemini configuration is invalid")
+        return provider
+    if selected == "groq":
+        try:
+            return GroqProvider()
+        except Exception:
+            raise RuntimeError("Container Groq configuration is invalid") from None
+    raise RuntimeError("Container LLM provider selection is invalid")
+
+
 def create_container_app():
     """Absent configuration stays default-deny; invalid configuration stops startup."""
     auth_provider, startup_customers = _authentication_provider()
-    provider = _gemini_provider()
+    provider = _llm_provider()
     try:
         app = create_app(auth_provider=auth_provider,
                          local_provider_factory=(lambda: provider) if provider is not None else None,

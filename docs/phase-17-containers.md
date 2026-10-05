@@ -56,6 +56,16 @@ These commands are operator instructions, not verification performed for this ch
 
 The existing HTTP provider label remains `local_scripted` for any configured local factory; the actual configured adapter is Gemini. This wiring deliberately leaves API schemas and frontend labels unchanged. No agent, graph, business rule, approval boundary, or automatic action is changed. Focused tests substitute the SDK transport and exercise the real adapter and authenticated run route; no live Gemini or Docker verification is claimed.
 
+## Optional Groq provider wiring (Phase 17B.5a)
+
+Groq is available through the same local provider factory with explicit
+`NOVAMIND_LLM_PROVIDER=groq`, runtime-injected `GROQ_API_KEY`, and optional
+`GROQ_MODEL` (default `openai/gpt-oss-20b`). Use `compose.groq.yaml` instead of the
+Gemini overlay. Without a selector, the existing Gemini configuration behavior
+above remains unchanged. See [Groq configuration, JSON compatibility, tests, and
+limitations](phase-17b5a-groq.md). Live Groq and Docker execution are not verified
+by the mocked tests; Bedrock is not implemented.
+
 ## Health and local verification
 
 The backend Docker health check calls only `http://127.0.0.1:8000/api/health`, with a two-second timeout, bounded response, disabled environment proxies, and no redirects. It validates the existing health response. It does not check a model, database, external service, authorization readiness, or workflow recovery.
