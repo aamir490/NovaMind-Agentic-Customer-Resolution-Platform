@@ -57,6 +57,7 @@ test('support intake retries failures, blocks duplicates, and stays successful u
   const { default: CustomerPortal } = await server.ssrLoadModule('/src/CustomerPortal.jsx');
   const { default: ReportProblem } = await server.ssrLoadModule('/src/ReportProblem.jsx');
   const { default: MyOrders } = await server.ssrLoadModule('/src/MyOrders.jsx');
+  const { default: MySupportRequests } = await server.ssrLoadModule('/src/MySupportRequests.jsx');
   const order = { id: '00000000-0000-4000-8000-000000000020', items: [{ sku: 'LAP-1', name: 'Laptop', quantity: 1 }] };
   const created = { id: '00000000-0000-4000-8000-000000000030', subject: 'Wrong item', status: 'open' };
   let calls = 0, resolveRequest, rejectRequest;
@@ -97,4 +98,7 @@ test('support intake retries failures, blocks duplicates, and stays successful u
   find(intake(), (el) => el.type === 'button' && el.props.children === 'Back to my orders').props.onClick();
   find(portal(), (el) => el.type === MyOrders);
   assert.equal([...elements(portal())].some((el) => el.type === ReportProblem), false);
+  find(portal(), (el) => el.type === 'button' && el.props.children === 'My Support Requests').props.onClick();
+  find(portal(), (el) => el.type === MySupportRequests);
+  assert.equal(calls, 2, 'Opening support history must not resubmit intake');
 });

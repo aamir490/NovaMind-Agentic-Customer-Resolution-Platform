@@ -373,7 +373,7 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .nav-item--customer-label { cursor: default; color: var(--accent-hover); border-color: #34564d; background: var(--accent-surface); pointer-events: none; }
 
 /* Portal sub-navigation (Catalog / My Orders tabs) */
-.portal-subnav { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); padding: var(--space-2); border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); }
+.portal-subnav { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); padding: var(--space-2); border: 1px solid var(--border); border-radius: 10px; background: var(--surface-panel); }
 .portal-subnav-item { display: flex; align-items: center; gap: var(--space-2); flex: 1; justify-content: center; min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 550; cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
 .portal-subnav-item:hover:not(:disabled) { background: var(--surface-raised); color: var(--text-primary); }
 .portal-subnav-item--active { border-color: #34564d; background: var(--accent-surface); color: var(--accent-hover); }
@@ -434,6 +434,8 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .order-detail-note { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
 
 /* Shared customer state components */
+.support-request-facts dd { overflow-wrap: anywhere; }
+.support-request-description { white-space: pre-wrap; }
 .customer-portal { display: grid; gap: var(--space-5); }
 .customer-notice { margin: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: 8px; background: var(--surface-panel); color: var(--text-secondary); font-size: 13px; }
 .customer-error { margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid #694343; border-radius: 6px; background: #302226; color: var(--error); overflow-wrap: anywhere; font-size: 13px; }

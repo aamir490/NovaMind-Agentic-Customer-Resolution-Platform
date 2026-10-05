@@ -18,6 +18,18 @@ function requireResponse(valid, resource) {
   if (!valid) throw new Error(`The API returned an invalid ${resource} response. No result was loaded`);
 }
 
+function myCase(supportCase) {
+  requireResponse(isUuid(supportCase?.id) && isUuid(supportCase.order_id)
+    && isText(supportCase.subject) && isText(supportCase.description)
+    && isText(supportCase.status) && isTimestamp(supportCase.created_at)
+    && isTimestamp(supportCase.updated_at), 'my support request');
+  // Only customer-facing fields; never expose workflow or reviewer metadata.
+  return { id: supportCase.id, order_id: supportCase.order_id,
+    subject: supportCase.subject, description: supportCase.description,
+    status: supportCase.status, created_at: supportCase.created_at,
+    updated_at: supportCase.updated_at };
+}
+
 function knowledgeEvidence(event) {
   // Optional evidence must never interrupt run tracking. Missing or invalid
   // evidence is unavailable, distinct from a confirmed retrieval with no hits.
@@ -272,6 +284,20 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
         status: supportCase.status,
         created_at: supportCase.created_at,
       };
+    },
+
+    async listMyCases(options) {
+      // The authenticated backend scopes this read. Never send customer_id.
+      const cases = await get('/cases', { signal: options?.signal });
+      requireResponse(Array.isArray(cases), 'my support requests list');
+      return cases.map(myCase);
+    },
+
+    async getMyCase(caseId, options) {
+      requireResponse(isUuid(caseId), 'case id');
+      const supportCase = myCase(await get(`/cases/${encodeURIComponent(caseId)}`, { signal: options?.signal }));
+      requireResponse(supportCase.id === caseId, 'my support request');
+      return supportCase;
     },
 
     async listMyOrders() {

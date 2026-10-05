@@ -3,15 +3,17 @@ import CustomerCatalog from './CustomerCatalog.jsx';
 import PlaceOrder from './PlaceOrder.jsx';
 import MyOrders from './MyOrders.jsx';
 import ReportProblem from './ReportProblem.jsx';
+import MySupportRequests from './MySupportRequests.jsx';
 
 /**
  * Customer Portal — top-level container for the customer-facing experience.
  *
- * Manages three sub-views:
+ * Manages customer sub-views:
  *   catalog        → CustomerCatalog (browse products, select one to order)
  *   order          → PlaceOrder      (confirm & submit the order)
  *   my-orders      → MyOrders        (list + detail of past orders)
  *   report-problem → ReportProblem   (support intake form for a selected order)
+ *   my-support-requests → MySupportRequests (read-only list and detail)
  *
  * The parent (main.jsx) renders this when role === 'CUSTOMER'.
  * Internal reviewer/admin views are NEVER rendered from here.
@@ -23,7 +25,7 @@ import ReportProblem from './ReportProblem.jsx';
  * key      — sessionVersion from parent resets internal state on sign-out
  */
 export default function CustomerPortal({ api, identity }) {
-  // Sub-view within the portal: 'catalog' | 'order' | 'my-orders' | 'report-problem'
+  // Sub-view within the customer portal.
   const [portalView, setPortalView] = useState('catalog');
   // The catalog item the customer selected before navigating to order form.
   const [pendingItem, setPendingItem] = useState(null);
@@ -83,6 +85,14 @@ export default function CustomerPortal({ api, identity }) {
           </svg>
           My Orders
         </button>
+        <button
+          type="button"
+          className={`portal-subnav-item${portalView === 'my-support-requests' ? ' portal-subnav-item--active' : ''}`}
+          aria-current={portalView === 'my-support-requests' ? 'page' : undefined}
+          onClick={() => setPortalView('my-support-requests')}
+        >
+          My Support Requests
+        </button>
       </nav>
 
       {/* Portal views — only one is shown at a time */}
@@ -106,6 +116,10 @@ export default function CustomerPortal({ api, identity }) {
 
       {portalView === 'my-orders' && (
         <MyOrders api={api} onReportProblem={handleReportProblem} />
+      )}
+
+      {portalView === 'my-support-requests' && (
+        <MySupportRequests api={api} />
       )}
 
       {portalView === 'report-problem' && pendingOrder && (
