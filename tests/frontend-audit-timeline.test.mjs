@@ -47,7 +47,7 @@ test('timeline conveys recorded progression with timestamps, kinds and safe meta
   ]);
   const headings = ['Tool activity recorded', 'Human review requested', 'Approval recorded', 'Workflow failure recorded'];
   assert.deepEqual([...html.matchAll(/<h4[^>]*>(.*?)<\/h4>/g)].map((match) => match[1]), headings);
-  for (const text of ['AGENT', 'REVIEW_REQUIRED', 'HUMAN_REVIEW', 'FAILURE', 'get_case', 'APPROVED',
+  for (const text of ['Agent activity', 'Review request', 'Human review', 'Failure', 'get_case', 'APPROVED',
     id(4), id(5), 'WORKFLOW_ERROR', 'Events 1–4', 'does not confirm business action execution']) assert.ok(html.includes(text), text);
   assert.equal((html.match(/<time dateTime="2026-10-04T10:00:00Z"/g) ?? []).length, 4);
   assert.match(html, /<ol[^>]*aria-label="Run audit timeline"[^>]*start="1"[^>]*tabindex="0"/);

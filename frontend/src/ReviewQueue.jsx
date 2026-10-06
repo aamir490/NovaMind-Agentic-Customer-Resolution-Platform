@@ -289,7 +289,7 @@ export default function ReviewQueue({ api, identity, active }) {
       </div>)}
     </section>}
     <p id="review-queue-status" className="case-caption" role="status" aria-atomic="true">
-      {loading ? 'Checking the backend for workflows awaiting human review…'
+      {loading ? <><span className="case-loading-dot" aria-hidden="true" />Checking the backend for workflows awaiting human review\u2026</>
         : accessDenied || state.phase === 'denied' ? 'Review access is unavailable. Confirm an authorized reviewer or administrator identity.'
         : state.phase === 'ready' ? `${state.items.length} ${state.items.length === 1 ? 'workflow' : 'workflows'} awaiting review at the last refresh.`
           : 'Pending reviews could not be loaded. No queue data is shown.'}
@@ -298,6 +298,12 @@ export default function ReviewQueue({ api, identity, active }) {
     {state.snapshotAt && <p className="case-caption">Queue checked at (server): <time dateTime={state.snapshotAt}>{state.snapshotAt}</time>.
       {' '}Refresh to check for changes.</p>}
     {state.phase === 'ready' && state.items.length === 0 && <div className="case-empty">
+      <span className="case-empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+          strokeLinejoin="round" strokeLinecap="round">
+          <path d="M9 4H5v17h14V4h-4M9 3h6v4H9zM8 13l3 3 5-6" />
+        </svg>
+      </span>
       <h3>No workflows awaiting review</h3>
       <p>No review-required workflows with pending proposals were returned by this server. Refresh after a workflow requests review.</p>
     </div>}
@@ -321,7 +327,7 @@ export default function ReviewQueue({ api, identity, active }) {
           <div><dt>Review status at refresh</dt><dd>{item.reviewStatus}</dd></div>
           <div><dt>Run updated at (server)</dt><dd><time dateTime={item.updatedAt}>{item.updatedAt}</time></dd></div>
         </dl>
-        {selected?.item.runId === item.runId ? <div className="review-confirmation">
+        {selected?.item.runId === item.runId ? <div className={`review-confirmation review-confirmation--${selected.decision === 'APPROVE' ? 'approve' : 'reject'}`}>
           <p id={`confirm-review-${item.runId}`} tabIndex={-1}>Confirm {selected.decision === 'APPROVE' ? 'approval' : 'rejection'} of the proposed {item.action}
             {' '}for proposal <code>{item.proposalId}</code>. This records your decision without executing the action.</p>
           <div className="review-decision-actions">

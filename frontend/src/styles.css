@@ -1998,6 +1998,15 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+/* Tonal confirmation box: green for approve, red-tinted for reject */
+.review-confirmation--approve {
+  border-color: var(--color-success-border);
+  background: var(--color-success-surface);
+}
+.review-confirmation--reject {
+  border-color: var(--color-error-border);
+  background: var(--color-error-surface);
+}
 .review-decisions { margin-block: var(--space-5); }
 .review-run-result { margin-block: var(--space-4); }
 .review-run-result h4 { margin-top: var(--space-5); }
@@ -2110,6 +2119,7 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
    ----------------------------------------------------------------------- */
 .diagnostics-workspace { display: grid; gap: var(--space-5); }
 .diagnostics-workspace > .run-notice { margin: 0; }
+.diagnostics-section-heading { margin: var(--space-1) 0 var(--space-3); font-size: 16px; }
 .diagnostics-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
@@ -2122,19 +2132,51 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+/* Tonal summary tiles for elevated values */
+.diagnostics-summary-tile--warning {
+  border-color: var(--color-warning-border) !important;
+  background: var(--color-warning-surface) !important;
+}
+.diagnostics-summary-tile--warning dt { color: var(--color-warning); }
+.diagnostics-summary-tile--warning dd { color: var(--color-warning); }
+.diagnostics-summary-tile--error {
+  border-color: var(--color-error-border) !important;
+  background: var(--color-error-surface) !important;
+}
+.diagnostics-summary-tile--error dt { color: var(--color-error); }
+.diagnostics-summary-tile--error dd { color: var(--color-error); }
 .diagnostics-summary dt { margin: 0; }
 .diagnostics-summary dd { font-size: 18px; }
+
+/* Operation metric cards */
 .diagnostics-metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: var(--space-4);
   list-style: none;
   padding: 0;
 }
 .diagnostics-metrics > li { min-width: 0; margin: 0; }
-.diagnostics-metrics h4 { margin: 0; }
+/* Error-state metric card */
+.diagnostics-metric-card--has-errors {
+  border-color: var(--color-error-border);
+  border-left: 3px solid var(--color-error);
+}
+.diagnostics-metric-count {
+  display: block;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin: var(--space-1) 0 var(--space-2);
+}
+.diagnostics-metric-ok     { margin: 0 0 var(--space-3); font-size: 12px; color: var(--color-success); }
+.diagnostics-metric-errors { margin: 0 0 var(--space-3); font-size: 12px; color: var(--color-error); font-weight: 600; }
 .diagnostics-usage { margin-top: var(--space-4); }
-.diagnostics-usage h5 { margin: 0 0 var(--space-2); font-size: 13px; }
+.diagnostics-usage h5,
+.diagnostics-usage .eyebrow { margin: 0 0 var(--space-2); }
+
+/* Event list */
 .diagnostics-events {
   max-height: 36rem;
   overflow-y: auto;
@@ -2142,16 +2184,67 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   padding: var(--space-1);
 }
 .diagnostics-events:focus-visible { outline-offset: -2px; }
+/* Error event card — left accent border */
+.diagnostics-event-card--error {
+  border-color: var(--color-error-border);
+  border-left: 3px solid var(--color-error);
+  background: var(--color-error-surface);
+}
+.diagnostics-event-op-label {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-1);
+}
+.diagnostics-event-op-label--error { color: var(--color-error); }
+.diagnostics-event-error-code {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-error);
+}
+/* Trace details chevron */
 .diagnostics-trace summary {
   cursor: pointer;
   width: fit-content;
   margin-top: var(--space-3);
   padding-block: var(--space-2);
+  padding-left: var(--space-4);
   color: var(--accent);
   font-size: 12px;
+  list-style: none;
+  position: relative;
 }
+.diagnostics-trace summary::-webkit-details-marker { display: none; }
+.diagnostics-trace summary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform var(--transition-fast);
+}
+.diagnostics-trace[open] summary::before { transform: translateY(-50%) rotate(90deg); }
 .diagnostics-workspace button:disabled { cursor: wait; }
 .audit-workspace, .diagnostics-workspace, .audit-event-card { min-width: 0; overflow-wrap: anywhere; }
+
+/* ── Shared audit/diagnostics loading row ────────────────────────────── */
+.audit-loading {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
 
 /* -----------------------------------------------------------------------
    RESPONSIVE BREAKPOINTS

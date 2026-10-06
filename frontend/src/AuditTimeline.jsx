@@ -1,5 +1,14 @@
 // Receives only the closed, validated projection from api.runAudit.
 // Labels are local copy; never derive descriptions from backend free-form text.
+
+// Human-readable labels for backend kind enum values.
+const kindLabels = {
+  AGENT:           'Agent activity',
+  REVIEW_REQUIRED: 'Review request',
+  HUMAN_REVIEW:    'Human review',
+  FAILURE:         'Failure',
+};
+
 function presentation(event) {
   switch (event.kind) {
     case 'AGENT':
@@ -39,7 +48,7 @@ export default function AuditTimeline({ events, after, hasMore }) {
           <article className="audit-event-card" aria-labelledby={`audit-event-${event.sequence}`}>
             <div className="audit-event-heading">
               <div>
-                <p className="audit-event-kind">Event #{event.sequence} · {event.kind}</p>
+                <p className="audit-event-kind">{kindLabels[event.kind] ?? event.kind} · #{event.sequence}</p>
                 <h4 id={`audit-event-${event.sequence}`}>{display.title}</h4>
               </div>
               <time dateTime={event.timestamp}>{new Date(event.timestamp).toLocaleString()}</time>
