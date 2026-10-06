@@ -1,6 +1,7 @@
 import { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import logoUrl from './assets/novamind-logo.png';
 import CaseReview from './CaseReview.jsx';
 import AIWorkspace from './AIWorkspace.jsx';
 import ReviewQueue from './ReviewQueue.jsx';
@@ -117,8 +118,8 @@ function App() {
   }
 
   const messages = {
-    idle: 'Connection not checked. Check the API when you’re ready to load case data.',
-    checking: 'Checking the local API…',
+    idle: 'Connection not checked. Check the API when you\'re ready to load case data.',
+    checking: 'Checking the local API\u2026',
     online: 'The local API is responding. This check confirms connectivity only.',
     offline: 'The local API is unavailable. Check that the backend is running, then try again.',
   };
@@ -126,11 +127,26 @@ function App() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#workspace">Skip to workspace</a>
+
+      {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside className="sidebar" aria-label="Workspace navigation">
-        <a className="brand" href="#workspace" aria-label="NovaMind workspace">
-          <span className="brand-mark" aria-hidden="true">N</span>
-          <span>NovaMind<span className="brand-caption">Customer resolution</span></span>
+
+        {/* Brand / logo */}
+        <a className="brand" href="#workspace" aria-label="NovaMind AI — go to workspace">
+          <img
+            src={logoUrl}
+            alt="NovaMind AI logo"
+            className="brand-logo"
+            width="48"
+            height="48"
+          />
+          <span className="brand-text">
+            NovaMind <span className="brand-ai">AI</span>
+            <span className="brand-caption">Customer resolution</span>
+          </span>
         </a>
+
+        {/* Navigation */}
         <nav className="workspace-nav" aria-label="Main navigation">
           {isCustomer ? (
             <>
@@ -150,89 +166,193 @@ function App() {
             <>
               <p className="nav-label">Workspace</p>
               <div className="nav-items">
-                {staffViews.map((entry) => <button key={entry.id} type="button" className="nav-item"
-                  aria-current={activeView === entry.id ? 'page' : undefined}
-                  aria-controls="workspace" onClick={() => setActiveView(entry.id)}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
-                    strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-                    <path d={entry.icon} />
-                  </svg>
-                  {entry.label}
-                  {activeView === entry.id && <span className="nav-indicator" aria-hidden="true" />}
-                </button>)}
+                {staffViews.map((entry) => (
+                  <button key={entry.id} type="button" className="nav-item"
+                    aria-current={activeView === entry.id ? 'page' : undefined}
+                    aria-controls="workspace"
+                    onClick={() => setActiveView(entry.id)}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+                      strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <path d={entry.icon} />
+                    </svg>
+                    {entry.label}
+                    {activeView === entry.id && (
+                      <span className="nav-indicator" aria-hidden="true" />
+                    )}
+                  </button>
+                ))}
               </div>
             </>
           )}
         </nav>
-        <div className="sidebar-context">
-          <span className="context-symbol" aria-hidden="true">N</span>
-          <div><strong>Local workspace</strong><span>Customer support</span></div>
+
+        {/* Sidebar footer — context + attribution + social links */}
+        <div className="sidebar-footer">
+          {/* Current workspace context */}
+          <div className="sidebar-context">
+            <span className="context-symbol" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+                strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 4v4l3 3" />
+              </svg>
+            </span>
+            <div>
+              <strong>Local workspace</strong>
+              <span>Customer support</span>
+            </div>
+          </div>
+
+          {/* Attribution + social links */}
+          <div className="sidebar-attribution">
+            <span className="sidebar-built-by">Built by Aamir</span>
+            <div className="sidebar-social">
+              <a
+                href="https://github.com/aamir490"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link"
+                aria-label="Aamir on GitHub">
+                {/* GitHub icon */}
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                </svg>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/aamir-imran"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link"
+                aria-label="Aamir on LinkedIn">
+                {/* LinkedIn icon */}
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
       </aside>
+
+      {/* ── App body ────────────────────────────────────────────────── */}
       <div className="app-body">
+
+        {/* Topbar */}
         <header className="topbar">
-          <p className="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span>{isCustomer ? 'Customer portal' : view.label}</p>
-          <span className="environment-label">Local environment</span>
+          <p className="breadcrumb">
+            <span>Workspace</span>
+            <span aria-hidden="true">/</span>
+            {isCustomer ? 'Customer portal' : view.label}
+          </p>
+          <div className="topbar-end">
+            <span className="environment-label">Local environment</span>
+          </div>
         </header>
+
+        {/* Main workspace */}
         <main id="workspace" className="workspace" tabIndex={-1}>
+
+          {/* Identity panel */}
           <section className="identity-panel" aria-labelledby="identity-title">
             <div className="identity-heading">
               <h2 id="identity-title">Workspace identity</h2>
               <span className={`badge ${session ? 'identity-role' : ''}`}>
-                {session ? session.identity.role : identityStatus === 'checking' ? 'Verifying' : 'Not signed in'}
+                {session
+                  ? session.identity.role
+                  : identityStatus === 'checking' ? 'Verifying' : 'Not signed in'}
               </span>
             </div>
-            <p id="identity-status" className={`identity-status ${identityStatus}`} role="status" aria-live="polite">
+            <p id="identity-status" className={`identity-status ${identityStatus}`}
+              role="status" aria-live="polite">
               {identityMessage}
             </p>
-            {session ? <div className="identity-details">
-              <dl>
-                <dt>User ID</dt><dd>{session.identity.user_id}</dd>
-                {session.identity.customer_id && <><dt>Customer ID</dt><dd>{session.identity.customer_id}</dd></>}
-              </dl>
-              <button type="button" className="button-secondary" onClick={signOut}>Sign out</button>
-            </div> : <form className="identity-form" onSubmit={confirmIdentity} autoComplete="off">
-              <label htmlFor="local-access-token">Local access token
-                <input id="local-access-token" name="token" type="password" required minLength={16} maxLength={256}
-                  autoComplete="off" spellCheck={false} autoCapitalize="none" disabled={identityStatus === 'checking'}
-                  aria-describedby="identity-help identity-status" />
-              </label>
-              <div className="identity-actions">
-                <button type="submit" disabled={identityStatus === 'checking'}>
-                  {identityStatus === 'checking' ? 'Verifying…' : 'Confirm identity'}
-                </button>
-                {identityStatus === 'checking' && <button type="button" className="button-secondary" onClick={signOut}>Cancel</button>}
-              </div>
-              <p id="identity-help" className="identity-help">Kept in memory for this page only. Reloading or signing out clears it.</p>
-            </form>}
+            {session
+              ? <div className="identity-details">
+                  <dl>
+                    <dt>User ID</dt><dd>{session.identity.user_id}</dd>
+                    {session.identity.customer_id && (
+                      <><dt>Customer ID</dt><dd>{session.identity.customer_id}</dd></>
+                    )}
+                  </dl>
+                  <button type="button" className="button-secondary" onClick={signOut}>
+                    Sign out
+                  </button>
+                </div>
+              : <form className="identity-form" onSubmit={confirmIdentity} autoComplete="off">
+                  <label htmlFor="local-access-token">Local access token
+                    <input id="local-access-token" name="token" type="password"
+                      required minLength={16} maxLength={256}
+                      autoComplete="off" spellCheck={false} autoCapitalize="none"
+                      disabled={identityStatus === 'checking'}
+                      aria-describedby="identity-help identity-status" />
+                  </label>
+                  <div className="identity-actions">
+                    <button type="submit" disabled={identityStatus === 'checking'}>
+                      {identityStatus === 'checking' ? 'Verifying\u2026' : 'Confirm identity'}
+                    </button>
+                    {identityStatus === 'checking' && (
+                      <button type="button" className="button-secondary" onClick={signOut}>
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <p id="identity-help" className="identity-help">
+                    Kept in memory for this page only. Reloading or signing out clears it.
+                  </p>
+                </form>
+            }
           </section>
+
+          {/* Page heading */}
           <div className="page-heading">
             <div>
-              <p className="eyebrow">{isCustomer ? 'NovaMind' : 'Customer resolution'}</p>
+              <p className="eyebrow">{isCustomer ? 'NovaMind AI' : 'Customer resolution'}</p>
               <h1 aria-live="polite">{isCustomer ? 'Customer portal' : view.title}</h1>
-              <p className="intro">{isCustomer ? 'Browse products, place a demo order, and track your orders.' : view.description}</p>
+              <p className="intro">
+                {isCustomer
+                  ? 'Browse products, place a demo order, and track your orders.'
+                  : view.description}
+              </p>
             </div>
-            <span className="badge">{isCustomer ? 'Customer portal' : ['cases', 'audit', 'diagnostics'].includes(activeView) ? 'Read-only workspace' : activeView === 'reviews' ? 'Human review' : activeView === 'ai-workspace' ? 'Live run tracking' : 'Placeholder view'}</span>
+            <span className="badge">
+              {isCustomer
+                ? 'Customer portal'
+                : ['cases', 'audit', 'diagnostics'].includes(activeView)
+                  ? 'Read-only workspace'
+                  : activeView === 'reviews'
+                    ? 'Human review'
+                    : activeView === 'ai-workspace'
+                      ? 'Live run tracking'
+                      : 'Placeholder view'}
+            </span>
           </div>
+
           {/* Customer portal — shown only to CUSTOMER role */}
           {isCustomer && (
             <CustomerPortal key={sessionVersion} api={session.api} identity={session.identity} />
           )}
+
           {/* Staff workspace — shown only to non-CUSTOMER roles */}
           {!isCustomer && <>
-            {view.placeholder && <section className="view-placeholder" aria-labelledby="placeholder-title">
-              <p className="eyebrow">{view.label}</p>
-              <h2 id="placeholder-title">This view is not connected yet.</h2>
-              <p>{view.placeholder}</p>
-            </section>}
+            {view.placeholder && (
+              <section className="view-placeholder" aria-labelledby="placeholder-title">
+                <p className="eyebrow">{view.label}</p>
+                <h2 id="placeholder-title">This view is not connected yet.</h2>
+                <p>{view.placeholder}</p>
+              </section>
+            )}
             <div hidden={activeView !== 'ai-workspace'}>
               <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
             </div>
             <div hidden={activeView !== 'reviews'}>
-              <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity} active={activeView === 'reviews'} />
+              <ReviewQueue key={sessionVersion} api={session?.api} identity={session?.identity}
+                active={activeView === 'reviews'} />
             </div>
-            {activeView === 'audit' && <AuditWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
-            {activeView === 'diagnostics' && <DiagnosticsWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />}
+            {activeView === 'audit' && (
+              <AuditWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
+            )}
+            {activeView === 'diagnostics' && (
+              <DiagnosticsWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
+            )}
             {/* Keep the case workspace mounted so navigation preserves an in-progress review. */}
             <div className="workspace-grid cases-layout" hidden={activeView !== 'cases'}>
               <CaseReview key={sessionVersion} api={session?.api} />
@@ -246,11 +366,17 @@ function App() {
                         <path d="M8 7h.01M8 17h.01M12 7h5M12 17h5" strokeLinecap="round" />
                       </svg>
                     </span>
-                    <div><p className="eyebrow">Connection</p><h2 id="connection-title">Local API</h2></div>
+                    <div>
+                      <p className="eyebrow">Connection</p>
+                      <h2 id="connection-title">Local API</h2>
+                    </div>
                   </div>
-                  <p className={`status ${health}`} role="status" aria-live="polite">{messages[health]}</p>
-                  <button className="button-secondary" onClick={checkHealth} disabled={health === 'checking'}>
-                    {health === 'checking' ? 'Checking…' : 'Check local API'}
+                  <p className={`status ${health}`} role="status" aria-live="polite">
+                    {messages[health]}
+                  </p>
+                  <button className="button-secondary" onClick={checkHealth}
+                    disabled={health === 'checking'}>
+                    {health === 'checking' ? 'Checking\u2026' : 'Check local API'}
                   </button>
                 </section>
                 <section className="guidance-panel" aria-labelledby="boundary-title">
@@ -258,12 +384,43 @@ function App() {
                   <h2 id="boundary-title">Evidence before action.</h2>
                   <p>Eligibility is not authorization. Approval is not execution.</p>
                   <span className="guidance-rule" aria-hidden="true" />
-                  <p className="footnote">This workspace supports read-only assessment. No business action is performed here.</p>
+                  <p className="footnote">
+                    This workspace supports read-only assessment. No business action is performed here.
+                  </p>
                 </section>
               </aside>
             </div>
           </>}
-          <footer className="workspace-footer"><span>NovaMind<span aria-hidden="true"> / </span>Customer Resolution Platform</span><span>{isCustomer ? 'Customer portal' : activeView === 'cases' ? 'Local case review' : 'Local workspace'}</span></footer>
+
+          {/* Workspace footer */}
+          <footer className="workspace-footer">
+            <span>
+              NovaMind AI
+              <span aria-hidden="true"> / </span>
+              Customer Resolution Platform
+            </span>
+            <span className="workspace-footer-links">
+              <a href="https://github.com/aamir490"
+                target="_blank" rel="noopener noreferrer"
+                className="footer-link">
+                GitHub
+              </a>
+              <span aria-hidden="true">&middot;</span>
+              <a href="https://www.linkedin.com/in/aamir-imran"
+                target="_blank" rel="noopener noreferrer"
+                className="footer-link">
+                LinkedIn
+              </a>
+            </span>
+            <span>
+              {isCustomer
+                ? 'Customer portal'
+                : activeView === 'cases'
+                  ? 'Local case review'
+                  : 'Local workspace'}
+            </span>
+          </footer>
+
         </main>
       </div>
     </div>
