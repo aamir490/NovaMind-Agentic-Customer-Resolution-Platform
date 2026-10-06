@@ -242,48 +242,62 @@ strong { font-weight: 600; }
 }
 
 /* ── Brand / logo ────────────────────────────────────────────────────── */
+/* Vertical stack: logo → "NovaMind AI" → "CUSTOMER RESOLUTION"
+   The source PNG is a 1774×887 landscape banner (2:1). Displayed at
+   130px wide / height auto — full artwork, natural aspect ratio, no
+   cropping, no distortion.                                            */
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-1) var(--space-2);
+  width: 100%;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   text-decoration: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   transition: background-color var(--transition-fast);
 }
-.brand:hover {
-  background: var(--accent-surface);
-}
+.brand:hover { background: var(--accent-surface); }
 
-/* Logo image — sized to fit the sidebar without overflowing */
+/* Logo image — full banner, natural 2:1 ratio */
 .brand-logo {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 130px;
+  height: auto;   /* preserves 2:1 → rendered height ≈ 65px */
   flex-shrink: 0;
-  object-fit: contain;
-  border-radius: var(--radius-md);
-  /* Subtle glow matching the cyan in the logo */
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.35));
-  transition: filter var(--transition-base);
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.30));
+  transform: scale(1);
+  transform-origin: center center;
+  transition: transform 240ms ease, filter 240ms ease;
+  will-change: transform;
 }
-.brand:hover .brand-logo {
-  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.55));
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .brand-logo {
+    transform: scale(1.10);
+    filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.55))
+            drop-shadow(0 0 18px rgba(139, 92, 246, 0.20));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo { transition: none; }
 }
 
-/* Brand text stack */
+/* Brand text stack — centered below the logo */
 .brand-text {
   display: flex;
   flex-direction: column;
-  font-size: 17px;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   white-space: nowrap;
   color: var(--text-primary);
 }
 
-/* "AI" suffix gets the gradient treatment */
+/* "AI" suffix — cyan→violet gradient */
 .brand-ai {
   display: inline;
   background: var(--gradient-brand);
@@ -294,20 +308,21 @@ strong { font-weight: 600; }
   font-weight: 800;
 }
 
+/* "CUSTOMER RESOLUTION" subtitle */
 .brand-caption {
   display: block;
-  margin-top: 2px;
+  margin-top: var(--space-1);
   color: var(--text-muted);
   font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  /* Safari: reset text-fill so caption isn't transparent */
+  /* Safari: reset text-fill so caption is not transparent from parent */
   -webkit-text-fill-color: var(--text-muted);
 }
 
 /* ── Navigation ──────────────────────────────────────────────────────── */
-.workspace-nav { margin-top: var(--space-6); flex: 1; }
+.workspace-nav { margin-top: var(--space-5); flex: 1; }
 .nav-label { margin: 0 var(--space-3) var(--space-3); }
 .nav-items { display: grid; gap: var(--space-1); margin-bottom: var(--space-5); }
 .nav-item {
@@ -390,11 +405,11 @@ strong { font-weight: 600; }
   gap: var(--space-3);
 }
 .sidebar-built-by {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  /* Subtle cyan→violet gradient to match brand */
+  /* Restrained cyan→violet gradient — same as brand, not neon */
   background: var(--gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
@@ -1505,9 +1520,10 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   .ai-workspace { grid-template-columns: minmax(0, 1fr); }
   .case-details-grid, .case-assessment-grid { grid-template-columns: minmax(0, 1fr); }
   .app-shell { grid-template-columns: 200px minmax(0, 1fr); }
-  .sidebar { padding: var(--space-5) var(--space-3) var(--space-4); }
-  .brand-logo { width: 40px; height: 40px; }
-  .brand-text { font-size: 15px; }
+  .sidebar { padding: var(--space-4) var(--space-3) var(--space-4); }
+  /* On the 200px sidebar scale down slightly */
+  .brand-logo { width: 104px; }
+  .brand-text { font-size: 14px; }
   .workspace-grid { grid-template-columns: minmax(0, 1fr); }
   .workspace-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .page-heading { align-items: flex-start; flex-direction: column; gap: var(--space-4); }
@@ -1533,9 +1549,11 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
     margin-top: var(--space-3);
   }
   .sidebar-context { display: none; }
-  .brand { width: fit-content; padding: 0; }
-  .brand-logo { width: 36px; height: 36px; }
-  .brand-text { font-size: 14px; }
+  /* Mobile: flip brand back to horizontal row for the compact top bar */
+  .brand { flex-direction: row; padding: 0; gap: var(--space-2); width: fit-content; }
+  .brand-logo { width: 52px; }
+  .brand-text { align-items: flex-start; text-align: left; font-size: 13px; white-space: nowrap; width: auto; }
+  .brand-caption { letter-spacing: 0.10em; }
   .workspace-nav { margin-top: var(--space-4); }
   .nav-label { display: none; }
   .nav-items { display: flex; flex-wrap: wrap; margin-bottom: 0; gap: var(--space-1); }

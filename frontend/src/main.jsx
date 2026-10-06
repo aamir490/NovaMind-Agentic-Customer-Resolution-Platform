@@ -131,14 +131,14 @@ function App() {
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside className="sidebar" aria-label="Workspace navigation">
 
-        {/* Brand / logo */}
+        {/* Brand / logo — vertical stack: logo → title → subtitle */}
         <a className="brand" href="#workspace" aria-label="NovaMind AI — go to workspace">
           <img
             src={logoUrl}
             alt="NovaMind AI logo"
             className="brand-logo"
-            width="48"
-            height="48"
+            width="130"
+            height="65"
           />
           <span className="brand-text">
             NovaMind <span className="brand-ai">AI</span>
