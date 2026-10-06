@@ -2,6 +2,7 @@ import { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import logoUrl from './assets/novamind-logo.png';
+import Dashboard from './Dashboard.jsx';
 import CaseReview from './CaseReview.jsx';
 import AIWorkspace from './AIWorkspace.jsx';
 import ReviewQueue from './ReviewQueue.jsx';
@@ -13,8 +14,7 @@ import { createApi } from './api.js';
 // Internal staff views — never shown to CUSTOMER role.
 const staffViews = [
   { id: 'dashboard', label: 'Dashboard', title: 'Dashboard',
-    description: 'A place for your workspace overview.',
-    placeholder: 'Dashboard summaries are not available yet. Open Cases to review a support case.',
+    description: 'Operations overview \u2014 cases, reviews, metrics and recent activity.' ,
     icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
   { id: 'cases', label: 'Cases', title: 'Case review',
     description: 'Customer context, policy, and eligibility. One place to review the details.',
@@ -322,7 +322,9 @@ function App() {
                     ? 'Human review'
                     : activeView === 'ai-workspace'
                       ? 'Live run tracking'
-                      : 'Placeholder view'}
+                      : activeView === 'dashboard'
+                        ? 'Operations overview'
+                        : 'Placeholder view'}
             </span>
           </div>
 
@@ -339,6 +341,14 @@ function App() {
                 <h2 id="placeholder-title">This view is not connected yet.</h2>
                 <p>{view.placeholder}</p>
               </section>
+            )}
+            {activeView === 'dashboard' && (
+              <Dashboard
+                key={sessionVersion}
+                api={session?.api}
+                identity={session?.identity}
+                onNavigate={setActiveView}
+              />
             )}
             <div hidden={activeView !== 'ai-workspace'}>
               <AIWorkspace key={sessionVersion} api={session?.api} identity={session?.identity} />
