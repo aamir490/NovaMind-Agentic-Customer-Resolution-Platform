@@ -55,7 +55,8 @@ class GroqDiagnosticTests(unittest.TestCase):
         self.assertEqual(body["response_format"], {"type": "json_object"})
         self.assertEqual(body["max_completion_tokens"], 2048)
         self.assertEqual(body["reasoning_effort"], "low")
-        self.assertFalse(body["include_reasoning"])
+        self.assertEqual(body["reasoning_format"], "hidden")
+        self.assertNotIn("include_reasoning", body)
         self.assertEqual(body["messages"][-1], {"role": "user", "content": PROMPT})
         self.assertEqual(request.headers["Authorization"], f"Bearer {KEY}")
 
@@ -84,7 +85,8 @@ class GroqDiagnosticTests(unittest.TestCase):
         self.assertEqual(self.output.getvalue(), f"Groq HTTP 400: {message}\n")
         self.assertNotIn("PRIVATE_NATIVE_TOOL_PAYLOAD", self.output.getvalue())
         request, = self.calls
-        self.assertEqual(json.loads(request.content)["tool_choice"], "none")
+        # GPT-OSS: tool_choice must be absent — Groq rejects it for reasoning models.
+        self.assertNotIn("tool_choice", json.loads(request.content))
 
     def test_redaction_precedes_truncation_and_control_characters_cannot_forge_lines(self):
         self.response = httpx.Response(400, json={"error": {"message":

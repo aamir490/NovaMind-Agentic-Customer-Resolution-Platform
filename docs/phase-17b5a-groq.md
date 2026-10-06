@@ -91,7 +91,9 @@ never silently increases the caller's budget. GPT-OSS reasoning consumes that sa
 budget. The existing agent uses 2,048 tokens per decision. For direct development
 requests, explicitly use a larger budget such as 8,192 when needed; the generic
 `LLMRequest` default of 512 can be too small for reasoning workloads. GPT-OSS 20B/120B
-requests set `reasoning_effort="low"` and `include_reasoning=false`. Other model IDs
+requests set `reasoning_effort="low"` and `reasoning_format="hidden"` (required by
+Groq when `response_format=json_object` is active; `reasoning_format` and
+`include_reasoning` are mutually exclusive, so `include_reasoning` is omitted). Other model IDs
 do not receive those model-specific parameters. Reasoning fields are never used as
 the final response. See [Groq reasoning documentation](https://console.groq.com/docs/reasoning).
 

@@ -8,9 +8,10 @@ from unittest.mock import patch
 import httpx
 from pydantic import ValidationError
 
-from backend.app.agent import AgentConfig, AgentDecision, Finish, ToolCall
+from backend.app.agent import AgentConfig, AgentDecision, Finish, ToolCall, agent_instructions
 from backend.app.groq import GroqProvider
 from backend.app.llm import LLMMessage, LLMRequest, ProviderFailure, StructuredLLM
+from backend.app.main import create_app
 
 
 KEY = "groq-test-only-not-a-real-key"
@@ -82,10 +83,15 @@ class GroqTests(unittest.TestCase):
                          {"$ref": "#/$defs/JsonValue"})
         self.assertEqual(body["max_completion_tokens"], 8192)
         self.assertEqual(body["reasoning_effort"], "low")
-        self.assertFalse(body["include_reasoning"])
+        # reasoning_format:"hidden" replaces include_reasoning for JSON mode compatibility.
+        self.assertEqual(body["reasoning_format"], "hidden")
+        self.assertNotIn("include_reasoning", body,
+            "include_reasoning must be absent — mutually exclusive with reasoning_format")
         self.assertFalse(body["stream"])
         self.assertEqual(body["n"], 1)
-        self.assertEqual(body["tool_choice"], "none")
+        # GPT-OSS: tool_choice must be ABSENT — sending it triggers a Groq HTTP 400.
+        self.assertNotIn("tool_choice", body,
+            "GPT-OSS must not receive tool_choice; Groq rejects it for reasoning models")
         self.assertNotIn("tools", body)
         self.assertNotIn("functions", body)
         self.assertNotIn("disable_tool_validation", body)
@@ -177,7 +183,8 @@ class GroqTests(unittest.TestCase):
                 self.assertEqual(result.code, "INVALID_RESPONSE")
                 self.assertNotIn("data", result.model_dump())
                 self.assertEqual(len(self.calls), 1)
-                self.assertEqual(json.loads(self.calls[0].content)["tool_choice"], "none")
+                # GPT-OSS: tool_choice must be absent regardless of native tool response.
+                self.assertNotIn("tool_choice", json.loads(self.calls[0].content))
 
     def test_canonical_validation_rejects_wrong_discriminator_arguments_and_extra_fields(self):
         for text in ('{}', '[]', 'null', '{"decision":{"kind":"finish"}}',
@@ -260,6 +267,144 @@ class GroqTests(unittest.TestCase):
         self.error = RuntimeError("adapter bug")
         with self.assertRaisesRegex(RuntimeError, "adapter bug"):
             self.result()
+
+    def test_gpt_oss_multi_turn_no_tool_choice_after_application_tool_step(self):
+        """
+        Regression: GPT-OSS second-call request must not contain tool_choice or
+        native tool fields even when the conversation history includes an
+        application-managed assistant decision with kind="tool" followed by a
+        tool_result user message.
+
+        This reproduces the exact message structure that exists on LLM call #2
+        in a live agent run, confirmed from graph_agent._record_result and
+        agent.py:
+
+            LLMMessage(role="assistant",
+                       content=AgentDecision(decision=call).model_dump_json())
+            LLMMessage(role="user",
+                       content=json.dumps({"tool_result": result.model_dump(...)}))
+
+        The assistant content contains {"decision":{"kind":"tool","name":"...","arguments":{...}}},
+        which Groq's inference may pattern-match as a prior native tool call.
+        The test confirms our request body never includes tool_choice or tools,
+        regardless of what the history contains.
+        """
+        app = create_app()
+        instructions = agent_instructions(app.state.local_tools.describe())
+
+        # Exact assistant message appended by both agent.py and graph_agent.py
+        # after a successful tool step (AgentDecision.model_dump_json()).
+        first_decision_json = AgentDecision(decision=ToolCall(
+            kind="tool",
+            name="get_case",
+            arguments={"case_id": "00000000-0000-0000-0000-000000000001"},
+        )).model_dump_json()
+
+        # Exact user message appended after the tool result
+        # (json.dumps({"tool_result": result.model_dump(mode="json")})).
+        tool_result_json = json.dumps({
+            "tool_result": {
+                "ok": True,
+                "tool": "get_case",
+                "data": {
+                    "id": "00000000-0000-0000-0000-000000000001",
+                    "customer_id": "00000000-0000-0000-0000-000000000002",
+                    "order_id": "00000000-0000-0000-0000-000000000003",
+                    "subject": "Wrong item",
+                    "description": "Please review",
+                    "status": "open",
+                },
+            }
+        })
+
+        # Second-call LLMRequest: system instructions + case context +
+        # assistant decision + tool result — exactly what the agent passes to
+        # StructuredLLM on step 2+ of the reasoning loop.
+        case_context_json = json.dumps({
+            "request": {
+                "case_id": "00000000-0000-0000-0000-000000000001",
+                "message": "Please review my case",
+                "conversation_id": None,
+            },
+            "case_result": {
+                "ok": True,
+                "tool": "get_case",
+                "data": {
+                    "id": "00000000-0000-0000-0000-000000000001",
+                    "subject": "Wrong item",
+                    "description": "Please review",
+                },
+            },
+        })
+
+        self.request = LLMRequest(
+            messages=(
+                LLMMessage(role="system",    content=instructions),
+                LLMMessage(role="user",      content=case_context_json),
+                LLMMessage(role="assistant", content=first_decision_json),
+                LLMMessage(role="user",      content=tool_result_json),
+            ),
+            max_output_tokens=AgentConfig().max_output_tokens,
+        )
+
+        result = self.result()
+
+        self.assertEqual(len(self.calls), 1)
+        sent = json.loads(self.calls[0].content)
+        messages = sent["messages"]
+
+        # 1. tool_choice must be ABSENT for GPT-OSS regardless of history content.
+        #    Any re-introduction of tool_choice for _GPT_OSS_MODELS will fail here.
+        self.assertNotIn("tool_choice", sent,
+            "GPT-OSS must not receive tool_choice even when history contains "
+            "tool-call-shaped assistant JSON")
+
+        # 2. No native tool registration fields — we never send a tools array.
+        for field in ("tools", "functions", "function_call", "disable_tool_validation"):
+            self.assertNotIn(field, sent)
+
+        # 3. Expected message count: compatibility instruction prepended by
+        #    GroqProvider (1) + the 4 caller messages = 5 total.
+        self.assertEqual(len(messages), 5)
+
+        # 4. Compatibility instruction is a user-role message at position 0
+        #    (GPT-OSS path: system prompts avoided per Groq recommendation).
+        self.assertEqual(messages[0]["role"], "user")
+        self.assertIn("JSON decision generator", messages[0]["content"])
+        self.assertIn("Never emit native tool calls", messages[0]["content"])
+
+        # 5. Caller messages follow the compatibility instruction unchanged,
+        #    in exact order: system / user / assistant / user.
+        self.assertEqual(
+            [m["role"] for m in messages[1:]],
+            ["system", "user", "assistant", "user"],
+        )
+
+        # 6. The assistant decision is preserved as ordinary text content —
+        #    not converted to a structured tool_calls object.
+        assistant_msg = messages[3]
+        self.assertEqual(assistant_msg["role"], "assistant")
+        self.assertEqual(assistant_msg["content"], first_decision_json)
+        self.assertNotIn("tool_calls",    assistant_msg)
+        self.assertNotIn("function_call", assistant_msg)
+
+        # 7. The tool result is preserved as ordinary user-role text content —
+        #    not a role="tool" message (OpenAI native tool result format).
+        tool_result_msg = messages[4]
+        self.assertEqual(tool_result_msg["role"], "user")
+        self.assertEqual(tool_result_msg["content"], tool_result_json)
+
+        # 8. GPT-OSS-specific parameters are still applied correctly.
+        self.assertEqual(sent["reasoning_effort"], "low")
+        self.assertEqual(sent["reasoning_format"], "hidden")
+        self.assertNotIn("include_reasoning", sent,
+            "include_reasoning must be absent — mutually exclusive with reasoning_format")
+        self.assertEqual(sent["response_format"], {"type": "json_object"})
+        self.assertEqual(sent["model"], "openai/gpt-oss-20b")
+
+        # 9. The full call succeeds (MockTransport returns FINAL).
+        self.assertTrue(result.ok)
+        self.assertIsInstance(result.data.decision, Finish)
 
 
 if __name__ == "__main__":

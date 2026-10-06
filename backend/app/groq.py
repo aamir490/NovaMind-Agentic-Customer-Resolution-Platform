@@ -127,12 +127,19 @@ class GroqProvider:
                         *(message.model_dump() for message in request.messages)]
         body = {"model": self.model, "messages": messages,
                 "response_format": {"type": "json_object"}, "stream": False, "n": 1,
-                "tool_choice": "none",
                 "max_completion_tokens": request.max_output_tokens}
+        # tool_choice:"none" prevents standard chat models from emitting native tool
+        # calls. openai/gpt-oss-* reasoning models on Groq reject this parameter
+        # (HTTP 400) when no native tools are registered, so it is omitted for them.
+        # The compatibility instruction and json_object format still govern output.
+        if self.model not in _GPT_OSS_MODELS:
+            body["tool_choice"] = "none"
         if self.model in _GPT_OSS_MODELS:
-            # Reasoning shares the completion budget. Keep the caller's limit,
-            # reduce reasoning effort, and never expose reasoning as final text.
-            body.update(reasoning_effort="low", include_reasoning=False)
+            # reasoning_format:"hidden" is required when json_object mode is active
+            # (Groq docs: format must be "parsed" or "hidden" with JSON mode/tools).
+            # include_reasoning is mutually exclusive with reasoning_format per docs,
+            # so it is omitted. Reasoning is suppressed via reasoning_format instead.
+            body.update(reasoning_effort="low", reasoning_format="hidden")
         try:
             response = self._client.post(_ENDPOINT, json=body,
                 headers={"Authorization": f"Bearer {self._key}"},

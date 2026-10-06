@@ -169,7 +169,9 @@ class ContainerGroqTests(unittest.IsolatedAsyncioTestCase):
             sent = json.loads(request.content)
             self.assertEqual(sent["max_completion_tokens"], 2048)
             self.assertEqual(sent["response_format"], {"type": "json_object"})
-            self.assertEqual(sent["tool_choice"], "none")
+            # GPT-OSS (openai/gpt-oss-20b): tool_choice must be absent.
+            self.assertNotIn("tool_choice", sent,
+                "GPT-OSS must not receive tool_choice; Groq rejects it for reasoning models")
             for option in ("tools", "functions", "function_call", "disable_tool_validation"):
                 self.assertNotIn(option, sent)
             boundary = sent["messages"][0]["content"]
