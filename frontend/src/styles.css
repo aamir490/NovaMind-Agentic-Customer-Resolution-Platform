@@ -1589,8 +1589,8 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 }
 
 /* =======================================================================
-   Customer Portal — Phase 17B.2
-   Reuses design tokens; adds customer-facing styles.
+   Customer Portal — Phase 17C.4
+   Premium customer-facing experience built on the 17C.2 design system.
    ======================================================================= */
 
 /* Sidebar: customer label item (non-interactive) */
@@ -1602,16 +1602,24 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   pointer-events: none;
 }
 
-/* Portal sub-navigation (Catalog / My Orders tabs) */
+/* ── Portal layout ───────────────────────────────────────────────────── */
+.customer-portal {
+  display: grid;
+  gap: var(--space-5);
+  /* Constrain portal content to a comfortable reading width */
+  max-width: 1200px;
+}
+
+/* ── Portal sub-navigation ───────────────────────────────────────────── */
 .portal-subnav {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
   padding: var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface-panel);
+  box-shadow: var(--shadow-sm);
 }
 .portal-subnav-item {
   display: flex;
@@ -1619,32 +1627,50 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   gap: var(--space-2);
   flex: 1;
   justify-content: center;
-  min-height: 40px;
-  padding: 8px 14px;
+  min-height: 42px;
+  padding: 9px 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
 }
+.portal-subnav-item svg { opacity: 0.7; transition: opacity var(--transition-fast); }
 .portal-subnav-item:hover:not(:disabled) {
   background: var(--surface-raised);
   color: var(--text-primary);
+  border-color: var(--border);
 }
+.portal-subnav-item:hover:not(:disabled) svg { opacity: 1; }
 .portal-subnav-item--active {
   border-color: var(--accent-border);
   background: var(--accent-surface);
   color: var(--accent-hover);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.06);
 }
+.portal-subnav-item--active svg { opacity: 1; }
 
-/* Catalog grid */
+/* ── Section header pattern ──────────────────────────────────────────── */
+/* Used by catalog, orders, support requests */
+.cp-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.cp-section-header h2 { margin: 0; }
+.cp-section-header .eyebrow { margin-bottom: var(--space-1); }
+
+/* ── Catalog grid ────────────────────────────────────────────────────── */
 .customer-catalog { display: grid; gap: var(--space-5); }
 .catalog-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
@@ -1652,31 +1678,36 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
 .catalog-header h2 { margin: 0; }
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--space-4);
   list-style: none;
   margin: 0;
   padding: 0;
 }
+
+/* Product card */
 .catalog-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: var(--space-5);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
   background: var(--surface-panel);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+              transform var(--transition-base);
   box-shadow: var(--shadow-sm);
 }
 .catalog-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
-.catalog-card--unavailable { opacity: 0.60; }
+.catalog-card--unavailable { opacity: 0.55; }
 .catalog-card--unavailable:hover {
   border-color: var(--border);
   box-shadow: var(--shadow-sm);
+  transform: none;
 }
 .catalog-card-body { min-width: 0; }
 .catalog-card-meta {
@@ -1692,13 +1723,14 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   font-family: ui-monospace, monospace;
   font-size: 11px;
   overflow-wrap: anywhere;
+  letter-spacing: 0.02em;
 }
 .catalog-badge {
   padding: 3px 8px;
   border-radius: var(--radius-xs);
   font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 .catalog-badge--available {
@@ -1711,16 +1743,29 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   background: var(--surface-raised);
   color: var(--text-muted);
 }
-.catalog-card-name  { margin: 0 0 var(--space-3); font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.catalog-card-name {
+  margin: 0 0 var(--space-2);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
 .catalog-card-description {
   margin: 0 0 var(--space-4);
   color: var(--text-secondary);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
   overflow-wrap: anywhere;
 }
-.catalog-card-price { margin: 0; }
-.catalog-card-price strong { font-size: 18px; color: var(--text-primary); letter-spacing: -0.02em; }
+.catalog-card-price { margin: var(--space-3) 0 0; }
+.catalog-card-price strong {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+/* Quantity + order action row */
 .catalog-card-action {
   display: flex;
   align-items: flex-end;
@@ -1729,23 +1774,35 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
-.catalog-qty-label { flex: 0 0 90px; margin: 0; font-size: 11px; }
-.catalog-qty-label input { min-height: 38px; padding: 7px 8px; text-align: center; }
-.catalog-card-action > button { flex: 1; }
+.catalog-qty-label { flex: 0 0 84px; margin: 0; font-size: 11px; }
+.catalog-qty-label span { display: block; margin-bottom: var(--space-1); }
+.catalog-qty-label input { min-height: 40px; padding: 7px 8px; text-align: center; }
+.catalog-card-action > button {
+  flex: 1;
+  /* Primary action — already styled by button base */
+}
 
-/* Place order */
+/* ── Place order ─────────────────────────────────────────────────────── */
 .place-order { display: grid; gap: var(--space-5); }
 .order-form-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
 }
 .order-form-header h2 { margin: 0; }
+
+/* Product summary panel in order form */
+.order-product-summary {
+  display: grid;
+  gap: var(--space-3);
+}
+.order-product-summary .catalog-card-name { font-size: 20px; }
+
 .order-form { display: grid; gap: var(--space-4); }
 .order-form fieldset { margin: 0; }
-.order-ownership-note { margin-top: var(--space-3); }
+.order-ownership-note { margin-top: var(--space-2); }
 .order-form-actions {
   display: flex;
   align-items: center;
@@ -1755,29 +1812,30 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   border-top: 1px solid var(--border);
 }
 
-/* Order success state */
+/* ── Order success state ─────────────────────────────────────────────── */
 .order-success {
   display: grid;
   justify-items: center;
   gap: var(--space-4);
   padding: var(--space-7) var(--space-5);
   border: 1px solid var(--color-success-border);
-  border-radius: var(--radius);
-  background: var(--surface-panel);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, var(--surface-panel) 0%, rgba(52,211,153,0.04) 100%);
   text-align: center;
-  box-shadow: var(--shadow-glow-accent);
+  box-shadow: 0 0 0 1px var(--color-success-border), var(--shadow-md);
 }
 .order-success-icon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border: 1px solid var(--color-success-border);
   border-radius: var(--radius-2xl);
   background: var(--color-success-surface);
   color: var(--color-success);
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.18);
 }
-.order-success h2 { margin: 0; color: var(--color-success); }
+.order-success h2 { margin: 0; color: var(--color-success); font-size: 22px; }
 .order-success p { max-width: 480px; margin: 0; color: var(--text-secondary); }
 .order-success-actions {
   display: flex;
@@ -1791,25 +1849,38 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   font-size: 12px;
   color: var(--text-muted);
   overflow-wrap: anywhere;
+  letter-spacing: 0.03em;
 }
 
-/* My orders */
+/* ── My orders ───────────────────────────────────────────────────────── */
 .my-orders { display: grid; gap: var(--space-5); }
 .orders-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-.orders-header h2 { margin: 0; }
-.orders-list { display: grid; gap: var(--space-4); list-style: none; margin: 0; padding: 0; }
-.order-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
+}
+.orders-header h2 { margin: 0; }
+
+/* Order list */
+.orders-list { display: grid; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+.order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.order-row:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
 }
 .order-row-body { flex: 1 1 0; min-width: 0; }
 .order-row-items {
@@ -1823,99 +1894,153 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-3);
   margin: 0;
   color: var(--text-secondary);
   font-size: 13px;
 }
-.order-row-item strong { color: var(--text-primary); }
+.order-row-item strong { color: var(--text-primary); font-weight: 600; }
 .order-detail-btn { flex-shrink: 0; }
-.order-detail { display: grid; gap: var(--space-5); }
-.order-items-heading { margin: var(--space-5) 0 var(--space-4); font-size: 14px; }
+
+/* Order detail pane */
+.order-detail { display: grid; gap: var(--space-4); }
+.order-items-heading { margin: var(--space-4) 0 var(--space-3); font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
 .order-detail-note {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
   padding-top: var(--space-4);
   border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
-/* Shared customer state components */
-.support-request-facts dd { overflow-wrap: anywhere; }
-.support-request-description { white-space: pre-wrap; }
-.customer-portal { display: grid; gap: var(--space-5); }
-.customer-notice {
-  margin: 0;
+/* Report problem call-to-action inside order detail */
+.order-detail-intake {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+.order-detail-intake .case-caption { color: var(--text-muted); font-size: 12px; }
+
+/* ── Shared customer state components ───────────────────────────────── */
+.support-request-facts dd { overflow-wrap: anywhere; }
+.support-request-description { white-space: pre-wrap; line-height: 1.7; }
+
+/* Loading notice */
+.customer-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-panel);
   color: var(--text-secondary);
   font-size: 13px;
 }
+/* Loading spinner dot */
+.customer-notice::before {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.5);
+  animation: cp-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cp-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+/* Error alert */
 .customer-error {
   margin: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-error-border);
+  border-left: 3px solid var(--color-error);
   border-radius: var(--radius-sm);
   background: var(--color-error-surface);
   color: var(--color-error);
   overflow-wrap: anywhere;
   font-size: 13px;
-  box-shadow: var(--shadow-glow-error);
+  line-height: 1.55;
 }
+
+/* Empty state */
 .customer-empty {
   display: grid;
   justify-items: center;
   align-content: center;
-  min-height: 240px;
-  padding: var(--space-6);
+  min-height: 260px;
+  padding: var(--space-7) var(--space-6);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
   background: var(--surface-panel);
   text-align: center;
 }
 .customer-empty-icon {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   margin-bottom: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
   background: var(--surface-raised);
   color: var(--text-muted);
 }
-.customer-empty h3 { margin-bottom: var(--space-3); font-size: 16px; }
-.customer-empty p { max-width: 430px; margin: 0; color: var(--text-muted); font-size: 13px; }
+.customer-empty h3 { margin-bottom: var(--space-2); font-size: 17px; color: var(--text-primary); }
+.customer-empty p { max-width: 400px; margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
 
 /* =======================================================================
-   Report a Problem / Support Intake — Phase 17B.3
+   Report a Problem / Support Intake — Phase 17C.4
    ======================================================================= */
 .report-problem { display: grid; gap: var(--space-5); }
 .report-problem-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
 }
 .report-problem-header h2 { margin: 0; }
-.report-order-context { display: grid; gap: var(--space-3); }
-.report-order-context .eyebrow { margin: 0; }
+
+/* Order context panel */
+.report-order-context {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--accent-border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent-surface);
+}
+.report-order-context .eyebrow { margin: 0; color: var(--accent); }
+.report-order-context .order-id { color: var(--text-muted); margin-bottom: var(--space-2); }
+
 .report-problem-form { display: grid; gap: var(--space-4); }
 .report-problem-form fieldset { margin: 0; }
 .report-problem-form textarea {
   display: block;
   width: 100%;
-  min-height: 120px;
+  min-height: 130px;
   resize: vertical;
   margin-top: var(--space-2);
-  padding: 9px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface-input);
   color: var(--text-primary);
   font: inherit;
   font-size: 13px;
+  line-height: 1.6;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 .report-problem-form textarea:hover:not(:disabled) {
@@ -1927,13 +2052,16 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   outline: none;
 }
 .report-problem-form textarea[aria-invalid="true"],
-.report-problem-form input[aria-invalid="true"] { border-color: var(--color-error); }
-
+.report-problem-form input[aria-invalid="true"] {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15);
+}
 .intake-field-error {
   display: block;
   margin-top: var(--space-1);
   color: var(--color-error);
   font-size: 11px;
+  font-weight: 500;
 }
 .report-problem-actions {
   display: flex;
@@ -1944,29 +2072,30 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   border-top: 1px solid var(--border);
 }
 
-/* Intake / order success state */
+/* ── Intake / order success states ───────────────────────────────────── */
 .intake-success {
   display: grid;
   justify-items: center;
   gap: var(--space-4);
   padding: var(--space-7) var(--space-5);
   border: 1px solid var(--color-success-border);
-  border-radius: var(--radius);
-  background: var(--surface-panel);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, var(--surface-panel) 0%, rgba(52,211,153,0.04) 100%);
   text-align: center;
-  box-shadow: var(--shadow-glow-accent);
+  box-shadow: 0 0 0 1px var(--color-success-border), var(--shadow-md);
 }
 .intake-success-icon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border: 1px solid var(--color-success-border);
   border-radius: var(--radius-2xl);
   background: var(--color-success-surface);
   color: var(--color-success);
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.18);
 }
-.intake-success h2 { margin: 0; color: var(--color-success); }
+.intake-success h2 { margin: 0; color: var(--color-success); font-size: 22px; }
 .intake-success p { max-width: 480px; margin: 0; color: var(--text-secondary); }
 .intake-success-facts { text-align: left; width: 100%; max-width: 480px; }
 .intake-success-actions {
@@ -1976,20 +2105,54 @@ code { color: var(--accent); font-size: 0.9em; overflow-wrap: anywhere; }
   justify-content: center;
 }
 .intake-status-open {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--color-success);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   font-size: 12px;
 }
 
-/* Order detail report button area */
+/* ── My Support Requests ─────────────────────────────────────────────── */
+/* Reuses .my-orders, .orders-list, .order-row patterns */
+/* Support case row — status badge */
+.support-case-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+}
+.support-case-status--open {
+  border-color: var(--accent-border);
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+.support-case-status--resolved,
+.support-case-status--closed {
+  border-color: var(--color-success-border);
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+
+/* Order detail report CTA */
 .order-detail-intake {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+/* ── Reduced-motion: disable the loading pulse ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .customer-notice::before { animation: none; }
 }
