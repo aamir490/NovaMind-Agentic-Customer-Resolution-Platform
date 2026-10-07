@@ -1,8 +1,8 @@
-# NovaMind Agentic Customer Resolution Platform
+# NovaMind Agentic Customer Resolution Platform 
 
 > **A bounded Agentic AI customer-resolution system that combines LLM reasoning, application-managed tools, deterministic business rules, local knowledge retrieval, LangGraph orchestration, human approval, security controls, observability, and an AWS ECS Fargate deployment.**
 >
-> **Built by Aamir**
+>   **Built by Aamir**
 
 <p align="center">
   <img src="https://cdn.simpleicons.org/amazonwebservices/FF9900" width="72" alt="Amazon Web Services"/>
