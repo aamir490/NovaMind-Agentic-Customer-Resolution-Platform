@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import KnowledgeEvidence from './KnowledgeEvidence.jsx';
 
+function createRequestId() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 const rejectedMessages = {
   PROVIDER_UNAVAILABLE: 'The run provider is unavailable. No run was started.',
   RUN_CAPACITY_UNAVAILABLE: 'The service cannot accept another run right now. No run was started.',
@@ -187,7 +196,7 @@ export default function AIWorkspace({ api, identity }) {
     event.preventDefault();
     if (!api || !identity || identity.provider === 'unavailable' || submitted.current || caseRequest.current
         || !cases?.some((record) => record.id === caseId) || !message.trim() || message.length > 8000) return;
-    const body = { instance_id: identity.instance_id, request_id: crypto.randomUUID(),
+    const body = { instance_id: identity.instance_id, request_id: createRequestId(),
       case_id: caseId, message: message.trim() };
     submitted.current = true;
     setAttempt({ state: 'sending', body });
