@@ -2793,3 +2793,61 @@ Before adapting it to real customer data or financial operations, complete the p
 **NovaMind Agentic Customer Resolution Platform**
 
 **Focus:** Agentic AI · LangGraph · Human-in-the-Loop · FastAPI · React · Docker · AWS ECS/Fargate · ALB · ECR · Secrets Manager · CloudWatch · Groq
+
+
+## Application Screenshots
+
+The following screenshots demonstrate the major features and workflows of the NovaMind Agentic Customer Resolution Platform.
+
+### Admin Ai Workplace 3A
+
+![NovaMind Admin Ai Workplace 3A](./project-pic/admin-ai-workplace-3a.png)
+
+### Admin Ai Workplace 3B
+
+![NovaMind Admin Ai Workplace 3B](./project-pic/admin-ai-workplace-3b.png)
+
+### Admin Ai Workplace 3C
+
+![NovaMind Admin Ai Workplace 3C](./project-pic/admin-ai-workplace-3c.png)
+
+### Admin Cases 2
+
+![NovaMind Admin Cases 2](./project-pic/admin-cases-2.png)
+
+### Admin Daignosis 6
+
+![NovaMind Admin Daignosis 6](./project-pic/admin-daignosis-6.png)
+
+### Admin Dashboard 0
+
+![NovaMind Admin Dashboard 0](./project-pic/admin-dashboard-0.png)
+
+### Admin Dashboard 1
+
+![NovaMind Admin Dashboard 1](./project-pic/admin-dashboard-1.png)
+
+### Admin Review 4
+
+![NovaMind Admin Review 4](./project-pic/admin-review-4.png)
+
+### Admin Review 5
+
+![NovaMind Admin Review 5](./project-pic/admin-review-5.png)
+
+### Coustomer Portal 1
+
+![NovaMind Coustomer Portal 1](./project-pic/coustomer-portal-1.png)
+
+### Coustomer Portal 2
+
+![NovaMind Coustomer Portal 2](./project-pic/coustomer-portal-2.png)
+
+### Coustomer Portal 3
+
+![NovaMind Coustomer Portal 3](./project-pic/coustomer-portal-3.png)
+
+### Coustomer Portal 4
+
+![NovaMind Coustomer Portal 4](./project-pic/coustomer-portal-4.png)
+
