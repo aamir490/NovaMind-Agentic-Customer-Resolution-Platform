@@ -91,7 +91,7 @@ export function createApi(fetcher = globalThis.fetch, { token = '', onUnauthoriz
     if (lifetime.signal.aborted) throw new Error('This browser session has ended.');
     const response = await fetcher(`/api${path}`, {
       method, cache: 'no-store', credentials: 'omit', redirect: 'error',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      headers: { ...(globalThis.location?.hostname?.endsWith('.ngrok-free.app') ? { 'ngrok-skip-browser-warning': 'true' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(body ? { 'Content-Type': 'application/json' } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.any([AbortSignal.timeout(5000), lifetime.signal, ...(signal ? [signal] : [])]),
