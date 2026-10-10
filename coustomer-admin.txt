@@ -1,0 +1,76 @@
+Here is a realistic test case for your NovaMind Agentic Customer Resolution Platform. You can use it to test both the Customer and Admin workflows.
+
+## 1. Customer — Create a New Case
+
+**Subject:** Refund Not Received After Order Cancellation
+
+**Description:**
+
+I cancelled my order 7 days ago, but I have not received my refund yet. The payment was successfully deducted from my bank account, and the order status shows "Cancelled."
+
+I contacted customer support earlier but have not received a clear update.
+
+Please check my refund status and let me know when I can expect the amount to be credited back to my original payment method.
+
+## 2. Admin — Request Message
+
+Please review this customer refund complaint, analyze the issue, and recommend the most appropriate resolution.
+
+Check the available case information, identify any missing details, and prepare a professional response for the customer.
+
+If the refund status cannot be verified, clearly explain what information is required and recommend escalation to the appropriate support team.
+
+Do not claim that the refund has been processed unless it is confirmed.
+
+## 3. What to test in NovaMind
+
+| Role     | Action                     | Expected behavior                 |
+| -------- | -------------------------- | --------------------------------- |
+| Customer | Create the refund case     | Case created successfully         |
+| Admin    | Open the customer case     | Case details displayed            |
+| Admin    | Submit the request message | AI analyzes the complaint         |
+| Admin    | Review AI recommendation   | Suggested resolution is displayed |
+| Admin    | Review customer response   | Professional reply is generated   |
+
+Testing tip: Check whether NovaMind distinguishes between information provided by the customer and verified refund records. It should not invent refund status, transaction details, or completion dates.
+AWSTemplateFormatVersion: "2010-09-09"
+
+----------------------------------------------------------
+
+Here is a realistic Laptop Damaged customer support case for testing your NovaMind Agentic Customer Resolution Platform.
+
+## 1. Customer — Create New Case
+
+**Subject:** Laptop Damaged and Not Working Properly
+
+**Description:**
+
+I purchased a laptop recently, but it has developed several problems. The screen flickers frequently, the laptop overheats during normal usage, and it sometimes shuts down automatically without any warning.
+
+I also noticed that the laptop's outer body is damaged near the hinge, making it difficult to open and close the screen safely.
+
+I would like to request an inspection and repair or replacement if the issue is covered under warranty.
+
+Please review my complaint and guide me through the next steps to resolve this issue.
+
+## 2. Admin — AI Request Message
+
+Please analyze this customer's laptop damage complaint and recommend an appropriate resolution.
+
+Identify the reported hardware problems, assess the possible severity, and determine what additional information is required to check warranty eligibility.
+
+Suggest the next steps for technical inspection, repair, or replacement, and prepare a professional response for the customer.
+
+Do not assume that the damage is covered under warranty or approve a replacement without verification.
+
+## 3. Expected NovaMind Test Results
+
+| Role     | Expected action                                                |
+| -------- | -------------------------------------------------------------- |
+| Customer | Successfully submits the laptop damage case                    |
+| Admin    | Opens and reviews the submitted case                           |
+| AI Agent | Identifies the screen, overheating, shutdown, and hinge issues |
+| AI Agent | Recommends warranty verification and inspection                |
+| Admin    | Reviews the recommendation before taking action                |
+
+This example is useful for testing whether NovaMind handles hardware complaints carefully without inventing warranty decisions or promising replacements.
