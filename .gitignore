@@ -54,3 +54,16 @@ START-NOVAMIND-LOCAL.ps1
 
 # Local NovaMind startup script NOTES
 NOTES-NOVAMIND-LOCAL.md
+/archive/
+/steps-to-deploy-alb.md
+/steps_to_deploy_cloudfront_new.md
+/cleanup.md
+/cleanup.sh
+/agent-decision-schema.json
+/frontend-taskdef-ngrok-fix.json
+/inference-config.json
+/inference-test.json
+/messages-test.json
+/messages.json
+/nova-request.json
+/NovaMind-Frontend-Review.txt
